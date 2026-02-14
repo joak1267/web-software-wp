@@ -13,7 +13,8 @@ import {
   FolderOpen,
   Mic,
   X,
-  BellRing
+  BellRing,
+  Briefcase // <--- Importamos el icono para el portafolio
 } from "lucide-react";
 
 // --- CONFIGURACIÓN DE ANIMACIONES ---
@@ -36,25 +37,40 @@ export default function LandingPage() {
   const [proSubmitStatus, setProSubmitStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const [proFormData, setProFormData] = useState({ name: '', email: '' });
 
+ // --- FUNCIÓN ACTUALIZADA CON TU NUEVO ID ---
   const handleDownloadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitStatus('loading');
+    const baseUrl = window.location.origin; // Esto te da "http://localhost:3000" o "https://evidenstalk.vercel.app"
+    const pdfLink = `${baseUrl}/guia-procedimiento-pericial.pdf`;
     try {
       await emailjs.send(
-        'service_82dhp4l', 'template_sw19kez',
+        'service_82dhp4l', 
+        'template_aydxraq', // <--- ¡AQUÍ ESTÁ TU NUEVO ID!
         {
-          user_name: formData.name, user_email: formData.email, user_phone: "Descarga Beta",
+          user_name: formData.name, 
+          user_email: formData.email, // Esto asegura que le llegue al usuario
+          user_phone: "Descarga Beta",
+          link_guia: pdfLink,
           message: `¡NUEVO USUARIO! ${formData.name} ha descargado la versión Beta de eVidensTalk.`
         },
         'jeM9wPRA9hYUXfgAc'
       );
       setSubmitStatus('success');
+      
+      // Inicia la descarga del archivo
       const link = document.createElement('a');
       link.href = 'https://github.com/joak1267/whatsapp-audit-tool/releases/download/v1.0.0/whatsapp-audit-tool.Setup.0.0.0.exe';
-      link.download = ''; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+      link.download = ''; 
+      document.body.appendChild(link); 
+      link.click(); 
+      document.body.removeChild(link);
+      
       setTimeout(() => { setIsModalOpen(false); setSubmitStatus('idle'); setFormData({ name: '', email: '' }); }, 2500);
     } catch (error) {
-      console.error(error); alert("Hubo un problema. Por favor, intenta de nuevo."); setSubmitStatus('idle');
+      console.error(error); 
+      alert("Hubo un problema. Por favor, intenta de nuevo."); 
+      setSubmitStatus('idle');
     }
   };
 
@@ -91,14 +107,21 @@ export default function LandingPage() {
             <span className="font-semibold tracking-tight text-white">eVidensTalk</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-neutral-400">
+            {/* BOTÓN INICIO */}
+            <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-sky-400 transition-colors">
+              Inicio
+            </button>
             <a href="#features" className="hover:text-sky-400 transition-colors">Características</a>
             <a href="#pricing" className="hover:text-sky-400 transition-colors">Planes</a>
           </div>
-          <a href="https://github.com/joak1267/whatsapp-audit-tool.git" target="_blank" rel="noopener noreferrer"
+
+          {/* --- BOTÓN PORTAFOLIO (REEMPLAZANDO AL DE GITHUB) --- */}
+          <a href="https://tu-portfolio.com" target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-2 text-sm font-medium border border-white/10 px-4 py-2 rounded-full hover:bg-white/5 transition-colors text-white">
-            <Github className="w-4 h-4" />
-            <span className="hidden sm:inline">GitHub</span>
+            <Briefcase className="w-4 h-4" />
+            <span className="hidden sm:inline">Portafolio</span>
           </a>
+          
         </div>
       </nav>
 
@@ -130,6 +153,11 @@ export default function LandingPage() {
               className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition-colors">
               <Github className="w-4 h-4" />
               Auditar Código
+            </a>
+            <a href="/guia-procedimiento-pericial.pdf" target="_blank"
+               className="w-full sm:w-auto flex items-center justify-center gap-2 bg-sky-500/10 border border-sky-500/20 text-sky-400 px-6 py-3 rounded-lg font-medium hover:bg-sky-500/20 transition-colors">
+              <FileText className="w-4 h-4" />
+              Guía Pericial (PDF)
             </a>
           </motion.div>
         </motion.div>
@@ -227,9 +255,52 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* --- FOOTER --- */}
-      <footer className="border-t border-white/5 py-8 text-center text-sm text-sky-100/40 bg-[#070b14]">
-        <p>© {new Date().getFullYear()} eVidensTalk - Cyber Forensic Suite. Desarrollado por <a href="https://github.com/joak1267" target="_blank" className="text-sky-100/60 hover:text-sky-400 transition-colors">Joa Tech</a>.</p>
+      {/* --- SECCIÓN DE SOPORTE Y CONTACTO --- */}
+      <section id="soporte" className="py-24 border-t border-white/5 bg-[#070b14] relative overflow-hidden">
+        <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-sky-500/30 bg-sky-500/10 text-xs font-bold text-sky-400 mb-6 uppercase tracking-widest">
+            Centro de Ayuda
+          </div>
+          <h2 className="text-4xl font-bold text-white mb-6 tracking-tight">¿Necesitas asistencia técnica?</h2>
+          <p className="text-sky-100/60 mb-10 text-lg">
+            Nuestro equipo técnico está disponible para peritos, fuerzas de seguridad y organismos judiciales que requieran soporte especializado o licencias corporativas.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <a href="mailto:soporte.evidenstalk@gmail.com" 
+               className="flex flex-col items-center p-8 rounded-2xl bg-[#0f172a] border border-white/5 hover:border-sky-500/40 transition-all group">
+              <div className="w-12 h-12 bg-sky-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <ShieldCheck className="w-6 h-6 text-sky-400" />
+              </div>
+              <h3 className="text-white font-bold mb-1">Soporte Técnico</h3>
+              <p className="text-sky-100/40 text-sm">Respuesta en menos de 24hs hábiles.</p>
+            </a>
+
+            <a href="https://github.com/joak1267/whatsapp-audit-tool/issues" target="_blank"
+               className="flex flex-col items-center p-8 rounded-2xl bg-[#0f172a] border border-white/5 hover:border-sky-500/40 transition-all group">
+              <div className="w-12 h-12 bg-sky-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Github className="w-6 h-6 text-sky-400" />
+              </div>
+              <h3 className="text-white font-bold mb-1">Reportar Bug</h3>
+              <p className="text-sky-100/40 text-sm">Comunidad y código abierto.</p>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      
+      {/* --- FOOTER ACTUALIZADO --- */}
+      <footer className="border-t border-white/5 py-12 text-center text-sm text-sky-100/40 bg-[#070b14]">
+        <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
+          <p>© {new Date().getFullYear()} eVidensTalk - Cyber Forensic Suite. Desarrollado por <a href="https://github.com/joak1267" target="_blank" className="text-sky-100/60 hover:text-sky-400 transition-colors font-medium">Joa Tech</a>.</p>
+          
+          <div className="flex items-center gap-8">
+            {/* Este link lleva a la carpeta /terminos que creamos recién */}
+            <a href="/terminos" className="hover:text-sky-400 transition-colors underline underline-offset-8 decoration-white/10 hover:decoration-sky-400/50">
+              Términos y Condiciones Legales
+            </a>
+          </div>
+        </div>
       </footer>
 
       {/* --- MODAL 1: DESCARGA BETA --- */}
