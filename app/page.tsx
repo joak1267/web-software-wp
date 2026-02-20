@@ -32,12 +32,35 @@ const staggerContainer: any = {
 
 export default function LandingPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const [formData, setFormData] = useState({ name: '', email: '' });
 
   const [isProModalOpen, setIsProModalOpen] = useState(false);
   const [proSubmitStatus, setProSubmitStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const [proFormData, setProFormData] = useState({ name: '', email: '' });
+
+
+  // Función que llama a Mercado Pago
+  const handleCheckout = async () => {
+    setIsCheckingOut(true);
+    try {
+      const res = await fetch('/api/checkout', { method: 'POST' });
+      const data = await res.json();
+      
+      if (data.url) {
+        // Si Mercado Pago nos da el link, mandamos al usuario ahí
+        window.location.href = data.url;
+      } else {
+        alert("Hubo un error generando el link de pago.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Hubo un error de conexión.");
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
 
  // --- LÓGICA DE DESCARGA ACTUALIZADA (v1.2.0) ---
   const handleDownloadSubmit = async (e: React.FormEvent) => {
@@ -444,9 +467,20 @@ export default function LandingPage() {
               </ul>
               
               <div className="mt-auto pt-4">
-                <a href="https://wa.me/5491100000000?text=Hola,%20quiero%20información%20sobre%20la%20Licencia%20Pericial%20de%20eVidensTalk" target="_blank" rel="noopener noreferrer" className="w-full py-3 rounded-xl bg-sky-500 text-white font-bold hover:bg-sky-400 transition-colors shadow-[0_0_20px_rgba(14,165,233,0.3)] block text-center">
-                  Solicitar Licencia
-                </a>
+                <button 
+                  onClick={handleCheckout} 
+                  disabled={isCheckingOut}
+                  className="w-full py-3 rounded-xl bg-sky-500 text-white font-bold hover:bg-sky-400 transition-colors shadow-[0_0_20px_rgba(14,165,233,0.3)] mt-auto text-center flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isCheckingOut ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Generando link seguro...
+                    </span>
+                  ) : (
+                    "Comprar Licencia (U$D 1)"
+                  )}
+                </button>
               </div>
             </div>
 
