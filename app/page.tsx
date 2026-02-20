@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { useAuth, SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import emailjs from '@emailjs/browser';
 import { 
   Bug,
@@ -31,6 +31,7 @@ const staggerContainer: any = {
 };
 
 export default function LandingPage() {
+  const { userId } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success'>('idle');
@@ -41,15 +42,22 @@ export default function LandingPage() {
   const [proFormData, setProFormData] = useState({ name: '', email: '' });
 
 
-  // Función que llama a Mercado Pago
-  const handleCheckout = async () => {
+  const handleCheckout = async (planName: string) => {
+    // 1. Verificación de seguridad: ¿Está logueado?
+    if (!userId) {
+      alert("Para adquirir una licencia, primero debes iniciar sesión.");
+      return;
+    }
+
     setIsCheckingOut(true);
     try {
-      const res = await fetch('/api/checkout', { method: 'POST' });
+      const res = await fetch('/api/checkout', { 
+        method: 'POST',
+        body: JSON.stringify({ plan: planName }) 
+      });
       const data = await res.json();
       
       if (data.url) {
-        // Si Mercado Pago nos da el link, mandamos al usuario ahí
         window.location.href = data.url;
       } else {
         alert("Hubo un error generando el link de pago.");
@@ -456,7 +464,7 @@ export default function LandingPage() {
                 Pericial <span className="text-lg font-semibold text-sky-400">(Beta)</span>
               </h3>
               <p className="text-sky-100/50 mb-6 text-sm min-h-[48px]">Rigor técnico y validez legal para presentaciones judiciales.</p>
-              <div className="text-3xl font-bold text-sky-400 mb-8">Consultar</div>
+              <div className="text-3xl font-bold text-sky-400 mb-8">$19,99</div>
               
               <ul className="space-y-4 mb-8 flex-1 text-sm">
                 <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> <span className="leading-tight">Procesamiento masivo ilimitado</span></li>
@@ -468,19 +476,21 @@ export default function LandingPage() {
               
               <div className="mt-auto pt-4">
                 <button 
-                  onClick={handleCheckout} 
-                  disabled={isCheckingOut}
-                  className="w-full py-3 rounded-xl bg-sky-500 text-white font-bold hover:bg-sky-400 transition-colors shadow-[0_0_20px_rgba(14,165,233,0.3)] mt-auto text-center flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isCheckingOut ? (
-                    <span className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Generando link seguro...
-                    </span>
-                  ) : (
-                    "Comprar Licencia (U$D 1)"
-                  )}
-                </button>
+  onClick={() => handleCheckout("pericial")} 
+  disabled={isCheckingOut}
+  className="w-full py-3 rounded-xl bg-sky-500 text-white font-bold hover:bg-sky-400 transition-colors shadow-[0_0_20px_rgba(14,165,233,0.3)] mt-auto text-center flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed"
+>
+  {!userId ? (
+    "Iniciá sesión para comprar"
+  ) : isCheckingOut ? (
+    <span className="flex items-center gap-2">
+      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+      Generando link seguro...
+    </span>
+  ) : (
+    "Obtener Licencia"
+  )}
+</button>
               </div>
             </div>
 
@@ -491,7 +501,7 @@ export default function LandingPage() {
                 Institucional <span className="text-lg font-semibold text-indigo-400">(Beta)</span>
               </h3>
               <p className="text-sky-100/50 mb-6 text-sm min-h-[48px]">Para estudios jurídicos, agencias y fuerzas de seguridad.</p>
-              <div className="text-3xl font-bold text-indigo-400 mb-8">A Medida</div>
+              <div className="text-3xl font-bold text-indigo-400 mb-8">$100</div>
               
               <ul className="space-y-4 mb-8 flex-1 text-sm">
                 <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight">Todo lo de la Licencia Pericial</span></li>
@@ -501,11 +511,19 @@ export default function LandingPage() {
                 <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight">Canal de soporte VIP directo</span></li>
               </ul>
               
-              <div className="mt-auto pt-4">
-                <a href="mailto:evidenstalk@gmail.com?subject=Consulta%20Plan%20Institucional" className="w-full py-3 rounded-xl border border-indigo-500/50 text-indigo-300 font-medium hover:bg-indigo-500/10 transition-colors block text-center">
-                  Contactar Ventas
-                </a>
-              </div>
+              <button 
+  onClick={() => handleCheckout("institucional")}
+  disabled={isCheckingOut}
+  className="w-full py-3 rounded-xl border border-indigo-500/50 text-indigo-300 font-medium hover:bg-indigo-500/10 transition-colors block text-center disabled:opacity-50"
+>
+  {!userId ? (
+    "Iniciá sesión para contratar"
+  ) : isCheckingOut ? (
+    "Procesando..."
+  ) : (
+    "Contratar Plan Institucional"
+  )}
+</button>
             </div>
 
           </div>
