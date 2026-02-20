@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence, Variants } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import emailjs from '@emailjs/browser';
 import { 
-  Github, 
+  Bug,
+  Mail, 
   Download, 
   ShieldCheck, 
   FileText, 
@@ -14,7 +16,10 @@ import {
   Mic,
   X,
   BellRing,
-  Briefcase // <--- Importamos el icono para el portafolio
+  Search,
+  User,
+  ChevronDown,
+  Briefcase 
 } from "lucide-react";
 
 // --- CONFIGURACIÓN DE ANIMACIONES ---
@@ -37,30 +42,31 @@ export default function LandingPage() {
   const [proSubmitStatus, setProSubmitStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const [proFormData, setProFormData] = useState({ name: '', email: '' });
 
- // --- FUNCIÓN ACTUALIZADA CON TU NUEVO ID ---
+ // --- LÓGICA DE DESCARGA ACTUALIZADA (v1.2.0) ---
   const handleDownloadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitStatus('loading');
-    const baseUrl = window.location.origin; // Esto te da "http://localhost:3000" o "https://evidenstalk.vercel.app"
+    const baseUrl = window.location.origin;
     const pdfLink = `${baseUrl}/guia-procedimiento-pericial.pdf`;
+    
     try {
       await emailjs.send(
         'service_82dhp4l', 
-        'template_aydxraq', // <--- ¡AQUÍ ESTÁ TU NUEVO ID!
+        'template_aydxraq',
         {
           user_name: formData.name, 
-          user_email: formData.email, // Esto asegura que le llegue al usuario
-          user_phone: "Descarga Beta",
+          user_email: formData.email,
+          user_phone: "Descarga Enterprise v1.2", // Actualizado para seguimiento
           link_guia: pdfLink,
-          message: `¡NUEVO USUARIO! ${formData.name} ha descargado la versión Beta de eVidensTalk.`
+          message: `¡NUEVO USUARIO! ${formData.name} ha descargado eVidensTalk Enterprise v1.2.0.`
         },
         'jeM9wPRA9hYUXfgAc'
       );
       setSubmitStatus('success');
       
-      // Inicia la descarga del archivo
+      // --- LINK DE DESCARGA DIRECTO AL GITHUB RELEASE v1.2.0 ---
       const link = document.createElement('a');
-      link.href = 'https://github.com/joak1267/whatsapp-audit-tool/releases/download/v1.0.0/whatsapp-audit-tool.Setup.0.0.0.exe';
+      link.href = 'https://github.com/joak1267/evidenstalk-enterprise/releases/download/v1.2.0/eVidensTalk.Enterprise.Setup.1.2.0.exe';
       link.download = ''; 
       document.body.appendChild(link); 
       link.click(); 
@@ -94,33 +100,64 @@ export default function LandingPage() {
   };
 
   return (
-    // Agregamos bg-[#0b1325] para imitar el fondo oscuro de tu software
     <div className="relative min-h-screen bg-[#0b1325] selection:bg-sky-500/30 font-sans">
       
-      {/* --- NAVBAR --- */}
+     {/* --- NAVBAR --- */}
       <nav className="fixed top-0 w-full glass-panel z-50 border-b-0 border-white/5 bg-[#0b1325]/80 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-sky-500 text-white rounded-lg flex items-center justify-center font-bold shadow-[0_0_10px_rgba(14,165,233,0.3)]">
-              eV
-            </div>
-            <span className="font-semibold tracking-tight text-white">eVidensTalk</span>
+        {/* 1. Agregamos 'relative' a este contenedor principal */}
+        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between relative">
+          
+          {/* IZQUIERDA: LOGO */}
+          <div className="flex items-center gap-3">
+            <img 
+              src="/logo.png" 
+              alt="eVidensTalk Logo" 
+              className="w-8 h-8 object-contain drop-shadow-[0_0_8px_rgba(14,165,233,0.5)]" 
+            />
+            <span className="font-semibold tracking-tight text-white">
+              <span className="text-cyan-400">e</span>VidensTalk
+            </span>
           </div>
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-neutral-400">
-            {/* BOTÓN INICIO */}
+
+          {/* CENTRO: ENLACES (Forzados al centro exacto) */}
+          <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-8 text-sm font-medium text-neutral-400">
             <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-sky-400 transition-colors">
               Inicio
             </button>
+            {/* Como Características está en medio de los 3, quedará justo en el centro de la pantalla */}
             <a href="#features" className="hover:text-sky-400 transition-colors">Características</a>
             <a href="#pricing" className="hover:text-sky-400 transition-colors">Planes</a>
           </div>
 
-          {/* --- BOTÓN PORTAFOLIO (REEMPLAZANDO AL DE GITHUB) --- */}
-          <a href="https://tu-portfolio.com" target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 text-sm font-medium border border-white/10 px-4 py-2 rounded-full hover:bg-white/5 transition-colors text-white">
-            <Briefcase className="w-4 h-4" />
-            <span className="hidden sm:inline">Portafolio</span>
-          </a>
+          {/* DERECHA: BOTONES DE LOGIN/PERFIL */}
+          <div className="flex items-center gap-4">
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button className="flex items-center gap-2 text-sm font-medium border border-sky-500/30 bg-sky-500/10 px-4 py-2 rounded-full hover:bg-sky-500/20 transition-colors text-sky-400">
+                  <Lock className="w-4 h-4" />
+                  <span className="hidden sm:inline">Iniciar Sesión</span>
+                </button>
+              </SignInButton>
+            </SignedOut>
+
+            <SignedIn>
+              <div className="relative flex items-center justify-center w-10 h-10 rounded-lg border border-sky-500/30 bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 transition-all shadow-[0_0_10px_rgba(14,165,233,0.1)] group cursor-pointer">
+                <User className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <div className="absolute inset-0 z-10 opacity-0">
+                  <UserButton 
+                    afterSignOutUrl="/" 
+                    appearance={{
+                      elements: {
+                        rootBox: "w-full h-full flex",
+                        userButtonTrigger: "w-full h-full",
+                        avatarBox: "w-full h-full"
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            </SignedIn>
+          </div>
           
         </div>
       </nav>
@@ -129,31 +166,39 @@ export default function LandingPage() {
       <section className="relative pt-40 pb-20 overflow-hidden flex flex-col items-center text-center px-4">
         <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-sky-500/[0.08] rounded-full blur-[100px] pointer-events-none" />
         
-        <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="max-w-4xl mx-auto z-10">
-          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-sky-500/30 bg-sky-500/10 text-xs font-semibold text-sky-400 mb-8 tracking-widest uppercase">
+        <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="max-w-4xl mx-auto z-10 flex flex-col items-center">
+          
+          {/* LOGO GRANDE EN HERO AGREGADO */}
+          <motion.div variants={fadeUp} className="mb-8 relative group">
+             <div className="absolute -inset-4 bg-sky-500/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+             <img 
+               src="/logo.png"
+               alt="Logo Grande" 
+               className="w-24 h-24 md:w-32 md:h-32 object-contain drop-shadow-[0_0_30px_rgba(14,165,233,0.3)] relative z-10"
+             />
+          </motion.div>
+
+          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-sky-500/30 bg-sky-500/10 text-xs font-semibold text-sky-400 mb-6 tracking-widest uppercase">
             Cyber Forensic Suite
           </motion.div>
           
-          <motion.h1 variants={fadeUp} className="text-5xl md:text-7xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-sky-100/50 mb-6">
-            eVidensTalk v3.5
-          </motion.h1>
+          {/* Título actualizado a v1.2 */}
+          <motion.h1 variants={fadeUp} className="text-5xl md:text-7xl font-bold tracking-tighter mb-6">
+  {/* La "e" en celeste sólido */}
+  <span className="text-sky-400 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]">e</span>
+  
+  {/* El resto con el degradado original */}
+  <span className="text-transparent bg-clip-text bg-gradient-to-b from-white to-sky-100/50">
+    VidensTalk
+  </span>
+</motion.h1>
           
           <motion.p variants={fadeUp} className="text-lg md:text-xl text-sky-100/60 max-w-2xl mx-auto mb-10 leading-relaxed">
             Sistema integral para la gestión, análisis y preservación de evidencia digital. 
             Procesa chats exportados localmente con total seguridad y privacidad.
           </motion.p>
           
-          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button onClick={() => setIsModalOpen(true)}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-sky-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-sky-400 transition-colors shadow-[0_0_20px_rgba(14,165,233,0.3)]">
-              <Download className="w-4 h-4" />
-              Descargar Cliente (Windows)
-            </button>
-            <a href="https://github.com/joak1267/whatsapp-audit-tool.git" target="_blank"
-              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition-colors">
-              <Github className="w-4 h-4" />
-              Auditar Código
-            </a>
+          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
             <a href="/guia-procedimiento-pericial.pdf" target="_blank"
                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-sky-500/10 border border-sky-500/20 text-sky-400 px-6 py-3 rounded-lg font-medium hover:bg-sky-500/20 transition-colors">
               <FileText className="w-4 h-4" />
@@ -163,31 +208,144 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* --- FEATURES SECTION --- */}
+      {/* --- CÓMO FUNCIONA (CON IMÁGENES) --- */}
+      <section id="how-it-works" className="py-24 border-t border-white/5 bg-[#0b1325] relative overflow-hidden">
+        {/* Luz de fondo decorativa */}
+        <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[500px] h-[500px] bg-sky-500/[0.03] rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="max-w-6xl mx-auto px-4 relative z-10">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-sky-500/30 bg-sky-500/10 text-xs font-bold text-sky-400 mb-6 uppercase tracking-widest">
+              Flujo de Trabajo
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Evidencia lista en 3 pasos</h2>
+            <p className="text-sky-100/60 max-w-2xl mx-auto">
+              Procesa exportaciones de WhatsApp de forma 100% local. Sin subir datos a la nube, garantizando la privacidad absoluta.
+            </p>
+          </div>
+
+          <div className="space-y-24">
+            {/* PASO 1 */}
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={staggerContainer} 
+              className="flex flex-col md:flex-row items-center gap-12"
+            >
+              <motion.div variants={fadeUp} className="flex-1 space-y-6">
+                <div className="w-12 h-12 rounded-full bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 font-bold text-xl">
+                  1
+                </div>
+                <h3 className="text-2xl font-bold text-white">Exporta y Carga el Chat</h3>
+                <p className="text-sky-100/60 leading-relaxed">
+                  Solicita la exportación del chat de WhatsApp directamente desde el dispositivo móvil (formato .txt o .zip). Arrastra el archivo a eVidensTalk y el sistema lo estructurará automáticamente de forma cronológica, separando emisores y receptores.
+                </p>
+              </motion.div>
+              <motion.div variants={fadeUp} className="flex-1 w-full">
+                {/* CONTENEDOR DE IMAGEN */}
+                <div className="aspect-video rounded-xl bg-[#0f172a] border border-white/10 shadow-2xl overflow-hidden relative group">
+                  {/* REEMPLAZAR ESTE DIV POR TU IMAGEN: <img src="/captura-1.png" alt="Cargar chat" className="w-full h-full object-cover" /> */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 to-transparent flex items-center justify-center">
+                    <span className="text-sky-100/30 font-medium flex flex-col items-center gap-2">
+                      <Download className="w-8 h-8" />
+                      [Imagen: Pantalla de carga de archivos]
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            {/* PASO 2 (Invertido) */}
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={staggerContainer} 
+              className="flex flex-col md:flex-row-reverse items-center gap-12"
+            >
+              <motion.div variants={fadeUp} className="flex-1 space-y-6">
+                <div className="w-12 h-12 rounded-full bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 font-bold text-xl">
+                  2
+                </div>
+                <h3 className="text-2xl font-bold text-white">Audita y Etiqueta</h3>
+                <p className="text-sky-100/60 leading-relaxed">
+                  Utiliza el motor de búsqueda global para encontrar palabras clave al instante. Escucha notas de voz integradas, transcribe audios largos y marca mensajes específicos con la etiqueta <span className="text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/20 text-sm">Evidencia</span> para incluirlos en el reporte final.
+                </p>
+              </motion.div>
+              <motion.div variants={fadeUp} className="flex-1 w-full">
+                {/* CONTENEDOR DE IMAGEN */}
+                <div className="aspect-video rounded-xl bg-[#0f172a] border border-white/10 shadow-2xl overflow-hidden relative group">
+                  {/* REEMPLAZAR ESTE DIV POR TU IMAGEN */}
+                  <div className="absolute inset-0 bg-gradient-to-bl from-sky-500/5 to-transparent flex items-center justify-center">
+                    <span className="text-sky-100/30 font-medium flex flex-col items-center gap-2">
+                      <Search className="w-8 h-8" />
+                      [Imagen: Interfaz de búsqueda y etiquetado]
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            {/* PASO 3 */}
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={staggerContainer} 
+              className="flex flex-col md:flex-row items-center gap-12"
+            >
+              <motion.div variants={fadeUp} className="flex-1 space-y-6">
+                <div className="w-12 h-12 rounded-full bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 font-bold text-xl">
+                  3
+                </div>
+                <h3 className="text-2xl font-bold text-white">Genera el Reporte Forense</h3>
+                <p className="text-sky-100/60 leading-relaxed">
+                  Exporta un documento PDF impecable listo para el juzgado. El reporte incluye automáticamente la fecha, hora, metadatos del archivo original y las firmas Hash (MD5/SHA256) para garantizar la inalterabilidad de la evidencia.
+                </p>
+              </motion.div>
+              <motion.div variants={fadeUp} className="flex-1 w-full">
+                {/* CONTENEDOR DE IMAGEN */}
+                <div className="aspect-video rounded-xl bg-[#0f172a] border border-white/10 shadow-2xl overflow-hidden relative group">
+                  {/* REEMPLAZAR ESTE DIV POR TU IMAGEN */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 to-transparent flex items-center justify-center">
+                    <span className="text-sky-100/30 font-medium flex flex-col items-center gap-2">
+                      <FileText className="w-8 h-8" />
+                      [Imagen: Vista previa del PDF con Hash]
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* --- BENEFICIOS TÉCNICOS (Antiguo Features) --- */}
       <section id="features" className="py-24 border-t border-white/5 bg-[#070b14]">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-white mb-4">Herramientas de Discovery</h2>
-            <p className="text-sky-100/60">Diseñado para peritos, abogados y analistas de seguridad.</p>
+            <h2 className="text-3xl font-bold text-white mb-4">Garantías Forenses</h2>
+            <p className="text-sky-100/60">Arquitectura diseñada específicamente para el rigor del ámbito legal y pericial.</p>
           </div>
           
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={staggerContainer} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <FeatureCard icon={<FolderOpen className="w-6 h-6 text-sky-400" />} title="Gestión de Casos" description="Crea carpetas contenedoras, organiza múltiples investigaciones en simultáneo y busca palabras clave a nivel global." />
-            <FeatureCard icon={<Mic className="w-6 h-6 text-sky-400" />} title="Transcripción IA" description="Conversión automática de notas de voz a texto legible, directamente integrado en la visualización del chat." />
-            <FeatureCard icon={<FileText className="w-6 h-6 text-sky-400" />} title="Reportes y Entregables" description="Etiqueta mensajes clave como 'Evidencia' y genera reportes PDF profesionales listos para presentar." />
+            <FeatureCard 
+              icon={<ShieldCheck className="w-6 h-6 text-sky-400" />} 
+              title="Privacidad Absoluta (Offline)" 
+              description="Procesamiento local y aislado. Tus archivos nunca pasan por servidores de terceros, asegurando intacta la cadena de custodia." 
+            />
+            <FeatureCard 
+              icon={<CheckCircle2 className="w-6 h-6 text-sky-400" />} 
+              title="Validez Jurídica (Hashes)" 
+              description="Cálculo automático y estampado de firmas criptográficas (MD5 y SHA-256) para garantizar la inalterabilidad de la evidencia." 
+            />
+            <FeatureCard 
+              icon={<Search className="w-6 h-6 text-sky-400" />} 
+              title="Motor de Indexación Masiva" 
+              description="Audita historiales de chat de varios años y gigabytes de peso sin bloqueos, con búsquedas globales en milisegundos." 
+            />
           </motion.div>
         </div>
       </section>
 
       {/* --- PLANES Y VERSIONES --- */}
       <section id="pricing" className="py-24 border-t border-white/5 relative">
-        {/* Glow de fondo para la sección de planes */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-sky-500/[0.03] rounded-full blur-[120px] pointer-events-none" />
         
         <div className="max-w-6xl mx-auto px-4 relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-white mb-4">Nuestros Planes</h2>
-            <p className="text-sky-100/60">Elige la versión que mejor se adapte a tus necesidades de análisis forense.</p>
+            <h2 className="text-3xl font-bold text-white mb-4">Planes Disponibles</h2>
+            <p className="text-sky-100/60">Elige la versión que mejor se adapte a tu flujo de trabajo.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
@@ -195,13 +353,13 @@ export default function LandingPage() {
             {/* TARJETA 1: BETA (GRATIS) */}
             <div className="bg-[#0f172a]/50 backdrop-blur-sm border border-white/10 p-8 rounded-2xl flex flex-col h-full hover:-translate-y-2 transition-transform duration-300">
               <div className="mb-6 text-center">
-                <h3 className="text-xl font-semibold text-white">Versión Beta</h3>
-                <div className="mt-4 text-4xl font-bold text-white">$0 <span className="text-sm font-normal text-sky-100/50 block mt-1">Acceso Temprano</span></div>
+                <h3 className="text-xl font-semibold text-white">Comunidad</h3>
+                <div className="mt-4 text-4xl font-bold text-white">$0</div>
+                <p className="text-xs text-sky-100/50 mt-2">Ideal para estudiantes.</p>
               </div>
               <ul className="space-y-4 mb-8 flex-1 text-sm text-sky-100/80">
                 <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> Funciones esenciales habilitadas</li>
                 <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> Actualizaciones constantes</li>
-                <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> Acceso al canal de feedback</li>
                 <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> Soporte de la comunidad</li>
               </ul>
               <button onClick={() => setIsModalOpen(true)}
@@ -210,41 +368,39 @@ export default function LandingPage() {
               </button>
             </div>
 
-            {/* TARJETA 2: PRO (DESTACADA Y VALIDADA) */}
-            <div className="bg-[#0f172a] p-8 rounded-2xl flex flex-col h-full border border-sky-500/50 shadow-[0_0_30px_rgba(14,165,233,0.15)] relative md:scale-105 z-10 bg-gradient-to-b from-sky-500/10 to-transparent">
+            {/* TARJETA 2: ENTERPRISE (DESTACADA) */}
+            <div className="bg-[#0f172a] p-8 rounded-2xl flex flex-col h-full border border-sky-500 shadow-[0_0_30px_rgba(14,165,233,0.15)] relative md:scale-105 z-10 bg-gradient-to-b from-sky-500/10 to-transparent">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-sky-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(14,165,233,0.5)]">
-                En Desarrollo
+                Recomendado
               </div>
               <div className="mb-6 text-center mt-2">
-                <h3 className="text-xl font-semibold text-white">Versión Pro</h3>
-                <div className="mt-4 text-3xl font-bold text-sky-400">Próximamente</div>
+                <h3 className="text-xl font-semibold text-white">Enterprise v1.2</h3>
+                <div className="mt-4 text-3xl font-bold text-sky-400">Gratis <span className="text-sm font-normal text-white/50">Beta</span></div>
               </div>
               <ul className="space-y-4 mb-8 flex-1 text-sm text-sky-100/80">
-                <li className="flex items-start gap-3 text-white font-medium"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> Todo lo de la Beta, más:</li>
-                <li className="flex items-start gap-3"><Lock className="w-5 h-5 text-sky-100/30 shrink-0" /> Reportes forenses avanzados (Hash)</li>
-                <li className="flex items-start gap-3"><Lock className="w-5 h-5 text-sky-100/30 shrink-0" /> Exportación multiformato (PDF/Excel)</li>
-                <li className="flex items-start gap-3"><Lock className="w-5 h-5 text-sky-100/30 shrink-0" /> Marca de agua personalizada</li>
-                <li className="flex items-start gap-3"><Lock className="w-5 h-5 text-sky-100/30 shrink-0" /> Soporte prioritario por email</li>
+                <li className="flex items-start gap-3 text-white font-medium"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> Todo lo de la versión Free, más:</li>
+                <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> Reportes forenses avanzados (Hash)</li>
+                <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> Instalador Offline (.exe)</li>
+                <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> Marca de agua personalizada</li>
               </ul>
               
-              <button onClick={() => setIsProModalOpen(true)}
+              <button onClick={() => setIsModalOpen(true)}
                 className="w-full bg-sky-500 hover:bg-sky-400 text-white border border-sky-400 py-3 rounded-lg font-bold transition-all shadow-[0_0_15px_rgba(14,165,233,0.3)] hover:shadow-[0_0_25px_rgba(14,165,233,0.5)] flex items-center justify-center gap-2">
-                <BellRing className="w-4 h-4" /> Unirse a la lista de espera
+                <Download className="w-4 h-4" /> Descargar Full
               </button>
             </div>
 
-            {/* TARJETA 3: ENTERPRISE */}
-            <div className="bg-[#0f172a]/50 backdrop-blur-sm border border-white/10 p-8 rounded-2xl flex flex-col h-full hover:-translate-y-2 transition-transform duration-300">
+            {/* TARJETA 3: CLOUD */}
+            <div className="bg-[#0f172a]/50 backdrop-blur-sm border border-white/10 p-8 rounded-2xl flex flex-col h-full hover:-translate-y-2 transition-transform duration-300 opacity-75 grayscale hover:grayscale-0 hover:opacity-100">
               <div className="mb-6 text-center">
-                <h3 className="text-xl font-semibold text-white">Plan Enterprise</h3>
-                <div className="mt-4 text-3xl font-bold text-sky-100/30">A Medida</div>
+                <h3 className="text-xl font-semibold text-white">Cloud Team</h3>
+                <div className="mt-4 text-3xl font-bold text-sky-100/30">---</div>
+                <p className="text-xs text-sky-100/50 mt-2">Para equipos.</p>
               </div>
               <ul className="space-y-4 mb-8 flex-1 text-sm text-sky-100/80">
-                <li className="flex items-start gap-3 text-white font-medium"><CheckCircle2 className="w-5 h-5 text-sky-100/50 shrink-0" /> Todo lo de la versión Pro, más:</li>
-                <li className="flex items-start gap-3"><Lock className="w-5 h-5 text-sky-100/30 shrink-0" /> Acceso a API local personalizada</li>
-                <li className="flex items-start gap-3"><Lock className="w-5 h-5 text-sky-100/30 shrink-0" /> Gestión de múltiples investigadores</li>
-                <li className="flex items-start gap-3"><Lock className="w-5 h-5 text-sky-100/30 shrink-0" /> Despliegue en servidores propios</li>
-                <li className="flex items-start gap-3"><Lock className="w-5 h-5 text-sky-100/30 shrink-0" /> Acuerdos SLA comerciales</li>
+                <li className="flex items-start gap-3"><Lock className="w-5 h-5 text-sky-100/30 shrink-0" /> Colaboración en tiempo real</li>
+                <li className="flex items-start gap-3"><Lock className="w-5 h-5 text-sky-100/30 shrink-0" /> Nube privada segura</li>
+                <li className="flex items-start gap-3"><Lock className="w-5 h-5 text-sky-100/30 shrink-0" /> Auditoría de accesos</li>
               </ul>
               <button className="w-full bg-transparent text-sky-100/30 border border-white/5 py-3 rounded-lg font-bold cursor-not-allowed">
                 Próximamente
@@ -255,7 +411,44 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* --- SECCIÓN DE SOPORTE Y CONTACTO --- */}
+
+      {/* --- PREGUNTAS FRECUENTES (FAQ) --- */}
+      <section id="faq" className="py-24 border-t border-white/5 bg-[#0b1325]">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-sky-500/30 bg-sky-500/10 text-xs font-bold text-sky-400 mb-6 uppercase tracking-widest">
+              Resolviendo Dudas
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Preguntas Frecuentes</h2>
+            <p className="text-sky-100/60">Todo lo que necesitas saber sobre el funcionamiento y seguridad de eVidensTalk.</p>
+          </div>
+
+          <div className="space-y-4">
+            <FAQItem 
+              question="¿Mis chats se suben a alguna nube o servidor de internet?" 
+              answer="Absolutamente no. eVidensTalk está diseñado bajo el principio de 'Privacidad por Diseño'. Todo el procesamiento, búsqueda y generación de reportes se realiza de forma 100% local en tu computadora. Tu evidencia nunca abandona tu disco duro." 
+            />
+            <FAQItem 
+              question="¿Qué validez legal tienen los reportes generados?" 
+              answer="Los reportes de la versión Enterprise/Pro incluyen el cálculo automático de firmas Hash (MD5 y SHA-256) del archivo original procesado. Esto garantiza el principio de inalterabilidad de la evidencia digital, requisito fundamental para presentarla en procesos judiciales o peritajes." 
+            />
+            <FAQItem 
+              question="¿Necesito conexión a internet para usar el software?" 
+              answer="El análisis de chats, búsquedas y generación de PDFs funciona de manera totalmente offline a través de nuestro archivo .exe. Solo se requiere conexión a internet para el inicio de sesión inicial (verificación de licencia) y para utilizar el motor de Inteligencia Artificial para las transcripciones de audios." 
+            />
+            <FAQItem 
+              question="¿Qué formatos de chat soporta el sistema?" 
+              answer="Actualmente eVidensTalk procesa las exportaciones estándar de WhatsApp. Solo necesitas exportar el chat desde el celular (usando la opción nativa 'Exportar chat' de WhatsApp) y cargar el archivo .txt o .zip resultante directamente en el programa." 
+            />
+            <FAQItem 
+              question="¿Funciona en Mac (macOS) o Linux?" 
+              answer="Por el momento, eVidensTalk está optimizado y empaquetado como un instalador nativo para Windows (.exe), ya que es el sistema operativo estándar en la gran mayoría de los laboratorios forenses, fuerzas de seguridad y estudios jurídicos." 
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* --- SECCIÓN DE SOPORTE --- */}
       <section id="soporte" className="py-24 border-t border-white/5 bg-[#070b14] relative overflow-hidden">
         <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-sky-500/30 bg-sky-500/10 text-xs font-bold text-sky-400 mb-6 uppercase tracking-widest">
@@ -263,39 +456,42 @@ export default function LandingPage() {
           </div>
           <h2 className="text-4xl font-bold text-white mb-6 tracking-tight">¿Necesitas asistencia técnica?</h2>
           <p className="text-sky-100/60 mb-10 text-lg">
-            Nuestro equipo técnico está disponible para peritos, fuerzas de seguridad y organismos judiciales que requieran soporte especializado o licencias corporativas.
+            Nuestro equipo técnico está disponible para peritos, fuerzas de seguridad y organismos judiciales.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <a href="mailto:soporte.evidenstalk@gmail.com" 
+            
+            {/* BOTÓN 1: SOPORTE GENERAL */}
+            <a href="mailto:evidenstalk@gmail.com?subject=Solicitud%20de%20Soporte%20Técnico%20-%20eVidensTalk&body=Hola%20equipo%20de%20eVidensTalk,%0A%0AMi%20nombre%20es:%20%0AInstitución/Estudio:%20%0A%0AMi%20consulta%20es%20la%20siguiente:%0A" 
                className="flex flex-col items-center p-8 rounded-2xl bg-[#0f172a] border border-white/5 hover:border-sky-500/40 transition-all group">
               <div className="w-12 h-12 bg-sky-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <ShieldCheck className="w-6 h-6 text-sky-400" />
+                <Mail className="w-6 h-6 text-sky-400" />
               </div>
-              <h3 className="text-white font-bold mb-1">Soporte Técnico</h3>
-              <p className="text-sky-100/40 text-sm">Respuesta en menos de 24hs hábiles.</p>
+              <h3 className="text-white font-bold mb-1">Contacto y Dudas</h3>
+              <p className="text-sky-100/50 text-sm">Consultas generales sobre el software</p>
             </a>
 
-            <a href="https://github.com/joak1267/whatsapp-audit-tool/issues" target="_blank"
-               className="flex flex-col items-center p-8 rounded-2xl bg-[#0f172a] border border-white/5 hover:border-sky-500/40 transition-all group">
-              <div className="w-12 h-12 bg-sky-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Github className="w-6 h-6 text-sky-400" />
+            {/* BOTÓN 2: REPORTAR BUG */}
+            <a href="mailto:evidenstalk@gmail.com?subject=Reporte%20de%20Fallo/Bug%20-%20eVidensTalk&body=Hola,%20he%20encontrado%20un%20error%20en%20el%20programa.%0A%0ADescripción%20del%20problema:%0A%0APasos%20para%20reproducirlo:%0A%0AVersión%20de%20Windows:%0A" 
+               className="flex flex-col items-center p-8 rounded-2xl bg-[#0f172a] border border-white/5 hover:border-red-500/40 transition-all group">
+              <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Bug className="w-6 h-6 text-red-400" />
               </div>
-              <h3 className="text-white font-bold mb-1">Reportar Bug</h3>
-              <p className="text-sky-100/40 text-sm">Comunidad y código abierto.</p>
+              <h3 className="text-white font-bold mb-1">Reportar un Error</h3>
+              <p className="text-sky-100/50 text-sm">Ayúdanos a mejorar reportando fallos</p>
             </a>
+
           </div>
         </div>
       </section>
 
       
-      {/* --- FOOTER ACTUALIZADO --- */}
+      {/* --- FOOTER --- */}
       <footer className="border-t border-white/5 py-12 text-center text-sm text-sky-100/40 bg-[#070b14]">
         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
-          <p>© {new Date().getFullYear()} eVidensTalk - Cyber Forensic Suite. Desarrollado por <a href="https://github.com/joak1267" target="_blank" className="text-sky-100/60 hover:text-sky-400 transition-colors font-medium">Joa Tech</a>.</p>
+          <p>© {new Date().getFullYear()} eVidensTalk - Cyber Forensic Suite. Desarrollado por <a href="https://portafolio-joa-tech.vercel.app/" target="_blank" className="text-sky-100/60 hover:text-sky-400 transition-colors font-medium">Joa Tech</a>.</p>
           
           <div className="flex items-center gap-8">
-            {/* Este link lleva a la carpeta /terminos que creamos recién */}
             <a href="/terminos" className="hover:text-sky-400 transition-colors underline underline-offset-8 decoration-white/10 hover:decoration-sky-400/50">
               Términos y Condiciones Legales
             </a>
@@ -303,7 +499,7 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {/* --- MODAL 1: DESCARGA BETA --- */}
+      {/* --- MODAL DE DESCARGA (Enterprise) --- */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -314,8 +510,8 @@ export default function LandingPage() {
               <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-sky-100/50 hover:text-white transition-colors">
                 <X className="w-6 h-6" />
               </button>
-              <h3 className="text-2xl font-bold text-white mb-2">Acceso a la Beta</h3>
-              <p className="text-sky-100/60 text-sm mb-6">Ingresa tus datos para registrar tu acceso y comenzar la descarga segura.</p>
+              <h3 className="text-2xl font-bold text-white mb-2">Descargar Enterprise</h3>
+              <p className="text-sky-100/60 text-sm mb-6">Versión 1.2.0 (Windows). Ingresa tus datos para registrar la licencia.</p>
               
               <form onSubmit={handleDownloadSubmit} className="space-y-4">
                 <div>
@@ -333,52 +529,9 @@ export default function LandingPage() {
                     ${submitStatus === 'idle' ? 'bg-sky-500 hover:bg-sky-400 shadow-[0_0_15px_rgba(14,165,233,0.3)]' : ''}
                     ${submitStatus === 'loading' ? 'bg-sky-500/50 cursor-not-allowed' : ''}
                     ${submitStatus === 'success' ? 'bg-emerald-500' : ''} `}>
-                  {submitStatus === 'idle' && 'Descargar eVidensTalk Beta'}
-                  {submitStatus === 'loading' && <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Procesando...</>}
+                  {submitStatus === 'idle' && 'Iniciar Descarga'}
+                  {submitStatus === 'loading' && 'Procesando...'}
                   {submitStatus === 'success' && <><CheckCircle2 className="w-5 h-5" /> ¡Descarga Iniciada!</>}
-                </button>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* --- MODAL 2: LISTA DE ESPERA PRO --- */}
-      <AnimatePresence>
-        {isProModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsProModalOpen(false)} className="absolute inset-0 bg-[#0b1325]/90 backdrop-blur-sm" />
-            <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md p-8 rounded-2xl bg-[#0f172a] border border-sky-500/30 shadow-[0_0_40px_rgba(14,165,233,0.2)]"
-            >
-              <button onClick={() => setIsProModalOpen(false)} className="absolute top-4 right-4 text-sky-100/50 hover:text-white transition-colors">
-                <X className="w-6 h-6" />
-              </button>
-              <div className="inline-block bg-sky-500/20 text-sky-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border border-sky-500/30 mb-4">
-                Beneficio Exclusivo
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Asegura un 50% OFF</h3>
-              <p className="text-sky-100/60 text-sm mb-6">La versión Pro está en desarrollo. Únete a la lista para ser el primero en enterarte y obtener un descuento vitalicio.</p>
-              
-              <form onSubmit={handleProWaitlistSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-sky-100/80 mb-1">Nombre completo</label>
-                  <input type="text" required placeholder="Ej: Dra. María Gómez" value={proFormData.name} onChange={(e) => setProFormData({...proFormData, name: e.target.value})}
-                    className="w-full bg-[#070b14] border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-sky-100/30 focus:outline-none focus:border-sky-500 transition-colors" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-sky-100/80 mb-1">Correo electrónico para aviso</label>
-                  <input type="email" required placeholder="tu@estudio.com" value={proFormData.email} onChange={(e) => setProFormData({...proFormData, email: e.target.value})}
-                    className="w-full bg-[#070b14] border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-sky-100/30 focus:outline-none focus:border-sky-500 transition-colors" />
-                </div>
-                <button type="submit" disabled={proSubmitStatus !== 'idle'}
-                  className={`w-full py-3 rounded-lg font-bold text-white transition-all duration-300 flex items-center justify-center gap-2 mt-4
-                    ${proSubmitStatus === 'idle' ? 'bg-sky-500 hover:bg-sky-400 shadow-[0_0_15px_rgba(14,165,233,0.4)]' : ''}
-                    ${proSubmitStatus === 'loading' ? 'bg-sky-500/50 cursor-not-allowed' : ''}
-                    ${proSubmitStatus === 'success' ? 'bg-emerald-500' : ''} `}>
-                  {proSubmitStatus === 'idle' && 'Unirme a la lista de espera'}
-                  {proSubmitStatus === 'loading' && <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Registrando...</>}
-                  {proSubmitStatus === 'success' && <><CheckCircle2 className="w-5 h-5" /> ¡Estás en la lista!</>}
                 </button>
               </form>
             </motion.div>
@@ -402,3 +555,34 @@ function FeatureCard({ icon, title, description }: { icon: React.ReactNode, titl
     </div>
   );
 }
+
+// --- NUEVO COMPONENTE FAQ ITEM ---
+function FAQItem({ question, answer }: { question: string, answer: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="border border-white/10 bg-[#0f172a]/50 rounded-xl overflow-hidden transition-colors hover:border-sky-500/30">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between p-6 text-left focus:outline-none group"
+      >
+        <span className="font-semibold text-white pr-4 group-hover:text-sky-400 transition-colors">{question}</span>
+        <ChevronDown className={`w-5 h-5 text-sky-400 transition-transform duration-300 shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            <div className="px-6 pb-6 text-sky-100/60 leading-relaxed text-sm">
+              {answer}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}  
