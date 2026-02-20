@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Check } from "lucide-react"; // Agrega esto si no lo tienes
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import emailjs from '@emailjs/browser';
 import { 
@@ -338,72 +339,77 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* --- PLANES Y VERSIONES --- */}
-      <section id="pricing" className="py-24 border-t border-white/5 relative">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-sky-500/[0.03] rounded-full blur-[120px] pointer-events-none" />
-        
-        <div className="max-w-6xl mx-auto px-4 relative z-10">
+     {/* --- SECCIÓN DE PLANES / PRICING --- */}
+      <section id="planes" className="py-24 border-t border-white/5 bg-[#070b14] relative">
+        <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-white mb-4">Planes Disponibles</h2>
-            <p className="text-sky-100/60">Elige la versión que mejor se adapte a tu flujo de trabajo.</p>
+            <h2 className="text-4xl font-bold text-white mb-4">Planes y Licencias</h2>
+            <p className="text-sky-100/60 text-lg">Diseñado para adaptarse a las necesidades de cada investigación.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
             
-            {/* TARJETA 1: BETA (GRATIS) */}
-            <div className="bg-[#0f172a]/50 backdrop-blur-sm border border-white/10 p-8 rounded-2xl flex flex-col h-full hover:-translate-y-2 transition-transform duration-300">
-              <div className="mb-6 text-center">
-                <h3 className="text-xl font-semibold text-white">Comunidad</h3>
-                <div className="mt-4 text-4xl font-bold text-white">$0</div>
-                <p className="text-xs text-sky-100/50 mt-2">Ideal para estudiantes.</p>
-              </div>
-              <ul className="space-y-4 mb-8 flex-1 text-sm text-sky-100/80">
-                <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> Funciones esenciales habilitadas</li>
-                <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> Actualizaciones constantes</li>
-                <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> Soporte de la comunidad</li>
-              </ul>
-              <button onClick={() => setIsModalOpen(true)}
-                className="w-full bg-white/10 text-white border border-white/20 py-3 rounded-lg font-bold hover:bg-white/20 transition-colors">
-                Descargar Gratis
-              </button>
-            </div>
-
-            {/* TARJETA 2: ENTERPRISE (DESTACADA) */}
-            <div className="bg-[#0f172a] p-8 rounded-2xl flex flex-col h-full border border-sky-500 shadow-[0_0_30px_rgba(14,165,233,0.15)] relative md:scale-105 z-10 bg-gradient-to-b from-sky-500/10 to-transparent">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-sky-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(14,165,233,0.5)]">
-                Recomendado
-              </div>
-              <div className="mb-6 text-center mt-2">
-                <h3 className="text-xl font-semibold text-white">Enterprise v1.2</h3>
-                <div className="mt-4 text-3xl font-bold text-sky-400">Gratis <span className="text-sm font-normal text-white/50">Beta</span></div>
-              </div>
-              <ul className="space-y-4 mb-8 flex-1 text-sm text-sky-100/80">
-                <li className="flex items-start gap-3 text-white font-medium"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> Todo lo de la versión Free, más:</li>
-                <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> Reportes forenses avanzados (Hash)</li>
-                <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> Instalador Offline (.exe)</li>
-                <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> Marca de agua personalizada</li>
-              </ul>
+            {/* 1. PLAN COMUNIDAD */}
+            <div className="rounded-2xl bg-[#0f172a] border border-white/10 p-8 flex flex-col h-full transition-all duration-300 hover:-translate-y-3 hover:shadow-2xl hover:border-white/20">
+              <h3 className="text-2xl font-bold text-white mb-2 flex items-baseline gap-2">
+                Edición Comunidad <span className="text-lg font-semibold text-sky-500">(Beta)</span>
+              </h3>
+              <p className="text-sky-100/50 mb-6 text-sm">Para estudiantes e investigaciones menores.</p>
+              <div className="text-3xl font-bold text-white mb-8">Gratis</div>
               
-              <button onClick={() => setIsModalOpen(true)}
-                className="w-full bg-sky-500 hover:bg-sky-400 text-white border border-sky-400 py-3 rounded-lg font-bold transition-all shadow-[0_0_15px_rgba(14,165,233,0.3)] hover:shadow-[0_0_25px_rgba(14,165,233,0.5)] flex items-center justify-center gap-2">
-                <Download className="w-4 h-4" /> Descargar Full
+              <ul className="space-y-4 mb-8 flex-1 text-sm">
+                <li className="flex items-start gap-3 text-sky-100/80"><Check className="w-5 h-5 text-sky-500 shrink-0" /> Procesamiento básico (hasta 15k msjs)</li>
+                <li className="flex items-start gap-3 text-sky-100/80"><Check className="w-5 h-5 text-sky-500 shrink-0" /> Búsqueda global de palabras clave</li>
+                <li className="flex items-start gap-3 text-sky-100/80"><Check className="w-5 h-5 text-sky-500 shrink-0" /> Exportación a PDF (Marca de agua)</li>
+                <li className="flex items-start gap-3 text-white/30"><Check className="w-5 h-5 text-white/20 shrink-0" /> Sin cálculo de Hashes forenses</li>
+                <li className="flex items-start gap-3 text-white/30"><Check className="w-5 h-5 text-white/20 shrink-0" /> Requiere conexión a internet</li>
+              </ul>
+              <button className="w-full py-3 rounded-xl border border-white/10 text-white font-medium hover:bg-white/5 transition-colors mt-auto">
+                Comenzar Gratis
               </button>
             </div>
 
-            {/* TARJETA 3: CLOUD */}
-            <div className="bg-[#0f172a]/50 backdrop-blur-sm border border-white/10 p-8 rounded-2xl flex flex-col h-full hover:-translate-y-2 transition-transform duration-300 opacity-75 grayscale hover:grayscale-0 hover:opacity-100">
-              <div className="mb-6 text-center">
-                <h3 className="text-xl font-semibold text-white">Cloud Team</h3>
-                <div className="mt-4 text-3xl font-bold text-sky-100/30">---</div>
-                <p className="text-xs text-sky-100/50 mt-2">Para equipos.</p>
+            {/* 2. PLAN PERICIAL (Destacado - El más vendido) */}
+            <div className="rounded-2xl bg-gradient-to-b from-[#0f172a] to-[#0a101f] border border-sky-500/50 p-8 flex flex-col relative shadow-[0_0_30px_rgba(14,165,233,0.15)] h-full transition-all duration-300 hover:-translate-y-3 hover:shadow-[0_0_45px_rgba(14,165,233,0.3)] hover:border-sky-400">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-sky-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider whitespace-nowrap">
+                Recomendado para Peritos
               </div>
-              <ul className="space-y-4 mb-8 flex-1 text-sm text-sky-100/80">
-                <li className="flex items-start gap-3"><Lock className="w-5 h-5 text-sky-100/30 shrink-0" /> Colaboración en tiempo real</li>
-                <li className="flex items-start gap-3"><Lock className="w-5 h-5 text-sky-100/30 shrink-0" /> Nube privada segura</li>
-                <li className="flex items-start gap-3"><Lock className="w-5 h-5 text-sky-100/30 shrink-0" /> Auditoría de accesos</li>
+              <h3 className="text-2xl font-bold text-white mb-2 flex items-baseline gap-2">
+                Licencia Pericial <span className="text-lg font-semibold text-sky-400">(Beta)</span>
+              </h3>
+              <p className="text-sky-100/50 mb-6 text-sm">Rigor técnico y validez legal para presentaciones judiciales.</p>
+              <div className="text-3xl font-bold text-sky-400 mb-8">Consultar</div>
+              
+              <ul className="space-y-4 mb-8 flex-1 text-sm">
+                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-sky-400 shrink-0" /> Procesamiento masivo ilimitado</li>
+                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-sky-400 shrink-0" /> Hashes MD5 y SHA-256 automáticos</li>
+                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-sky-400 shrink-0" /> Reporte PDF Forense profesional</li>
+                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-sky-400 shrink-0" /> Privacidad Absoluta (Modo Offline)</li>
+                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-sky-400 shrink-0" /> Soporte técnico por correo</li>
               </ul>
-              <button className="w-full bg-transparent text-sky-100/30 border border-white/5 py-3 rounded-lg font-bold cursor-not-allowed">
-                Próximamente
+              <button className="w-full py-3 rounded-xl bg-sky-500 text-white font-bold hover:bg-sky-400 transition-colors shadow-[0_0_20px_rgba(14,165,233,0.3)] mt-auto">
+                Solicitar Licencia
+              </button>
+            </div>
+
+            {/* 3. PLAN INSTITUCIONAL (El "Premium") */}
+            <div className="rounded-2xl bg-[#0f172a] border border-indigo-500/30 p-8 flex flex-col h-full relative overflow-hidden transition-all duration-300 hover:-translate-y-3 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] hover:border-indigo-500/50">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 blur-2xl rounded-full"></div>
+              <h3 className="text-2xl font-bold text-white mb-2 flex items-baseline gap-2">
+                Institucional <span className="text-lg font-semibold text-indigo-400">(Beta)</span>
+              </h3>
+              <p className="text-sky-100/50 mb-6 text-sm">Para estudios jurídicos, agencias y fuerzas de seguridad.</p>
+              <div className="text-3xl font-bold text-indigo-400 mb-8">A Medida</div>
+              
+              <ul className="space-y-4 mb-8 flex-1 text-sm">
+                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-indigo-400 shrink-0" /> Todo lo de la Licencia Pericial</li>
+                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="font-semibold">Marca Blanca:</span> Logo de tu institución en PDFs</li>
+                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-indigo-400 shrink-0" /> Multi-licencia (Hasta 5 equipos)</li>
+                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-indigo-400 shrink-0" /> Implementación y capacitación</li>
+                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-indigo-400 shrink-0" /> Canal de soporte VIP directo</li>
+              </ul>
+              <button className="w-full py-3 rounded-xl border border-indigo-500/50 text-indigo-300 font-medium hover:bg-indigo-500/10 transition-colors mt-auto">
+                Contactar Ventas
               </button>
             </div>
 
