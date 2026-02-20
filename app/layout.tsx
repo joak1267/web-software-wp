@@ -3,6 +3,8 @@ import { Analytics } from '@vercel/analytics/react';
 import { ClerkProvider } from '@clerk/nextjs';
 // 1. Importamos el tema oscuro
 import { dark } from '@clerk/themes';
+// 2. Importamos el idioma español de Clerk
+import { esES } from '@clerk/localizations';
 import './globals.css';
 
 // --- CONFIGURACIÓN SEO Y METADATOS ---
@@ -24,8 +26,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    // 2. Agregamos la propiedad 'appearance' al ClerkProvider
     <ClerkProvider
+      // 3. Aplicamos el idioma español y mantenemos tu "Salir" personalizado
+      localization={{
+        ...esES, // Cargamos todo el diccionario en español
+        userButton: {
+          ...esES.userButton, // Cargamos las traducciones del botón
+          action__signOut: 'Salir' // Pisamos SOLO la palabra de cerrar sesión con la tuya
+        }
+      }}
       appearance={{
         // Usamos el tema oscuro como base
         baseTheme: dark,
@@ -33,8 +42,6 @@ export default function RootLayout({
         variables: {
           colorPrimary: '#38bdf8', // Este es el color "sky-400" de Tailwind que usas
           colorTextOnPrimaryBackground: 'white',
-          // Opcional: si quieres que el fondo sea exactamente el mismo azul oscuro de tu web:
-          // colorBackground: '#0f172a', 
         },
         // Opcional: Ajustes finos a los elementos
         elements: {

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check } from "lucide-react"; // Agrega esto si no lo tienes
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import emailjs from '@emailjs/browser';
 import { 
@@ -13,14 +12,11 @@ import {
   FileText, 
   Lock, 
   CheckCircle2, 
-  FolderOpen,
-  Mic,
-  X,
-  BellRing,
   Search,
-  User,
   ChevronDown,
-  Briefcase 
+  Briefcase,
+  X,
+  User
 } from "lucide-react";
 
 // --- CONFIGURACIÓN DE ANIMACIONES ---
@@ -57,7 +53,7 @@ export default function LandingPage() {
         {
           user_name: formData.name, 
           user_email: formData.email,
-          user_phone: "Descarga Enterprise v1.2", // Actualizado para seguimiento
+          user_phone: "Descarga Enterprise v1.2",
           link_guia: pdfLink,
           message: `¡NUEVO USUARIO! ${formData.name} ha descargado eVidensTalk Enterprise v1.2.0.`
         },
@@ -65,7 +61,6 @@ export default function LandingPage() {
       );
       setSubmitStatus('success');
       
-      // --- LINK DE DESCARGA DIRECTO AL GITHUB RELEASE v1.2.0 ---
       const link = document.createElement('a');
       link.href = 'https://github.com/joak1267/evidenstalk-enterprise/releases/download/v1.2.0/eVidensTalk.Enterprise.Setup.1.2.0.exe';
       link.download = ''; 
@@ -81,32 +76,12 @@ export default function LandingPage() {
     }
   };
 
-  const handleProWaitlistSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setProSubmitStatus('loading');
-    try {
-      await emailjs.send(
-        'service_82dhp4l', 'template_sw19kez',
-        {
-          user_name: proFormData.name, user_email: proFormData.email, user_phone: "Waitlist PRO",
-          message: `💰 ¡NUEVO LEAD PRO! ${proFormData.name} se anotó a la lista de espera para comprar eVidensTalk Pro.`
-        },
-        'jeM9wPRA9hYUXfgAc'
-      );
-      setProSubmitStatus('success');
-      setTimeout(() => { setIsProModalOpen(false); setProSubmitStatus('idle'); setProFormData({ name: '', email: '' }); }, 3000);
-    } catch (error) {
-      console.error(error); alert("Hubo un problema de conexión. Por favor, intenta de nuevo."); setProSubmitStatus('idle');
-    }
-  };
-
   return (
     <div className="relative min-h-screen bg-[#0b1325] selection:bg-sky-500/30 font-sans">
       
      {/* --- NAVBAR --- */}
-      <nav className="fixed top-0 w-full glass-panel z-50 border-b-0 border-white/5 bg-[#0b1325]/80 backdrop-blur-md">
-        {/* 1. Agregamos 'relative' a este contenedor principal */}
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between relative">
+      <nav className="fixed top-0 w-full glass-panel z-50 border-b-0 border-white/5 bg-[#0b1325]/80 backdrop-blur-md h-16">
+        <div className="max-w-6xl mx-auto px-4 h-full flex items-center justify-between relative">
           
           {/* IZQUIERDA: LOGO */}
           <div className="flex items-center gap-3">
@@ -120,17 +95,16 @@ export default function LandingPage() {
             </span>
           </div>
 
-          {/* CENTRO: ENLACES (Forzados al centro exacto) */}
+          {/* CENTRO: ENLACES */}
           <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-8 text-sm font-medium text-neutral-400">
             <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-sky-400 transition-colors">
               Inicio
             </button>
-            {/* Como Características está en medio de los 3, quedará justo en el centro de la pantalla */}
             <a href="#features" className="hover:text-sky-400 transition-colors">Características</a>
-            <a href="#pricing" className="hover:text-sky-400 transition-colors">Planes</a>
+            <a href="#planes" className="hover:text-sky-400 transition-colors">Planes</a>
           </div>
 
-          {/* DERECHA: BOTONES DE LOGIN/PERFIL */}
+          {/* DERECHA: BOTONES DE LOGIN Y AVATAR */}
           <div className="flex items-center gap-4">
             <SignedOut>
               <SignInButton mode="modal">
@@ -142,8 +116,13 @@ export default function LandingPage() {
             </SignedOut>
 
             <SignedIn>
+              {/* Diseño del Avatar Azul Personalizado con los menús de Clerk ocultos encima */}
               <div className="relative flex items-center justify-center w-10 h-10 rounded-lg border border-sky-500/30 bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 transition-all shadow-[0_0_10px_rgba(14,165,233,0.1)] group cursor-pointer">
+                
+                {/* El ícono azul visible */}
                 <User className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                
+                {/* El botón de Clerk invisible por encima (opacity-0) */}
                 <div className="absolute inset-0 z-10 opacity-0">
                   <UserButton 
                     afterSignOutUrl="/" 
@@ -154,7 +133,81 @@ export default function LandingPage() {
                         avatarBox: "w-full h-full"
                       }
                     }}
-                  />
+                  >
+                    {/* BOTÓN RÁPIDO EN EL MENÚ DESPLEGABLE */}
+                    <UserButton.MenuItems>
+                      <UserButton.Action 
+                        label="Descargar eVidensTalk" 
+                        labelIcon={<Download className="w-4 h-4" />} 
+                        onClick={() => setIsModalOpen(true)} 
+                      />
+                    </UserButton.MenuItems>
+                    
+                    {/* PANEL PERSONALIZADO DENTRO DE "MANAGE ACCOUNT" */}
+                  <UserButton.UserProfilePage 
+                    label="Suscripción y Plan" 
+                    url="suscripcion" 
+                    labelIcon={<Briefcase className="w-4 h-4" />}
+                  >
+                    <div className="p-8 font-sans">
+                      <h2 className="text-2xl font-bold text-white mb-6">Gestión de Suscripción</h2>
+                      
+                      {/* CAJA DE PLAN ACTUAL ESTILO DARK MODE */}
+                      <div className="bg-[#0f172a] border border-white/10 rounded-2xl p-6 mb-8 shadow-lg relative overflow-hidden">
+                        {/* Brillo de fondo sutil */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/5 blur-2xl rounded-full pointer-events-none"></div>
+                        
+                        <p className="text-sm font-semibold text-sky-100/50 mb-2">Plan Actual</p>
+                        <div className="flex items-center gap-3">
+                          <span className="text-3xl font-black text-emerald-400 uppercase tracking-wide drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]">
+                            Comunidad
+                          </span>
+                          <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                            Activo
+                          </span>
+                        </div>
+                        <p className="text-sm text-sky-100/70 mt-4 leading-relaxed relative z-10">
+                          Tienes acceso a las herramientas de procesamiento básico. El plan no tiene fecha de vencimiento y es completamente gratuito.
+                        </p>
+                      </div>
+
+                      {/* OPCIONES DE LA CUENTA MEJORADO */}
+                      <div className="mb-8">
+                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                          <ShieldCheck className="w-5 h-5 text-sky-400" />
+                          Opciones de la Cuenta
+                        </h3>
+                        
+                        <div className="bg-[#070b14]/50 border border-white/5 rounded-xl p-5 relative group hover:border-white/10 transition-colors">
+                          {/* Línea lateral decorativa */}
+                          <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-sky-500 to-transparent rounded-l-xl opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                          
+                          <p className="text-sm text-sky-100/60 leading-relaxed pl-2">
+                            Para desbloquear funciones avanzadas como <span className="text-sky-300 font-medium">procesamiento masivo ilimitado</span> y <span className="text-sky-300 font-medium">firmas Hash MD5/SHA-256</span>, o solicitar la cancelación de tu licencia, ponte en contacto con nuestro equipo de ventas.
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* BOTONES MEJORADOS */}
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <a 
+                          href="https://wa.me/5491100000000?text=Hola,%20quiero%20mejorar%20mi%20plan%20de%20eVidensTalk%20a%20Pericial" 
+                          target="_blank"
+                          rel="noreferrer"
+                          className="bg-sky-500 hover:bg-sky-400 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-[0_0_15px_rgba(14,165,233,0.3)] hover:shadow-[0_0_25px_rgba(14,165,233,0.5)] text-center flex-1"
+                        >
+                          Mejorar Plan
+                        </a>
+                        <a 
+                          href="mailto:evidenstalk@gmail.com?subject=Gestion%20de%20Suscripcion%20(Cancelar/Modificar)" 
+                          className="bg-[#0b1325] hover:bg-white/5 text-sky-100/80 font-semibold py-3 px-6 rounded-xl border border-white/10 transition-colors text-center flex-1"
+                        >
+                          Contactar Soporte
+                        </a>
+                      </div>
+                    </div>
+                  </UserButton.UserProfilePage>
+                  </UserButton>
                 </div>
               </div>
             </SignedIn>
@@ -169,7 +222,6 @@ export default function LandingPage() {
         
         <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="max-w-4xl mx-auto z-10 flex flex-col items-center">
           
-          {/* LOGO GRANDE EN HERO AGREGADO */}
           <motion.div variants={fadeUp} className="mb-8 relative group">
              <div className="absolute -inset-4 bg-sky-500/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
              <img 
@@ -183,16 +235,12 @@ export default function LandingPage() {
             Cyber Forensic Suite
           </motion.div>
           
-          {/* Título actualizado a v1.2 */}
           <motion.h1 variants={fadeUp} className="text-5xl md:text-7xl font-bold tracking-tighter mb-6">
-  {/* La "e" en celeste sólido */}
-  <span className="text-sky-400 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]">e</span>
-  
-  {/* El resto con el degradado original */}
-  <span className="text-transparent bg-clip-text bg-gradient-to-b from-white to-sky-100/50">
-    VidensTalk
-  </span>
-</motion.h1>
+            <span className="text-sky-400 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]">e</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-b from-white to-sky-100/50">
+              VidensTalk
+            </span>
+          </motion.h1>
           
           <motion.p variants={fadeUp} className="text-lg md:text-xl text-sky-100/60 max-w-2xl mx-auto mb-10 leading-relaxed">
             Sistema integral para la gestión, análisis y preservación de evidencia digital. 
@@ -209,9 +257,8 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* --- CÓMO FUNCIONA (CON IMÁGENES) --- */}
+      {/* --- CÓMO FUNCIONA --- */}
       <section id="how-it-works" className="py-24 border-t border-white/5 bg-[#0b1325] relative overflow-hidden">
-        {/* Luz de fondo decorativa */}
         <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[500px] h-[500px] bg-sky-500/[0.03] rounded-full blur-[120px] pointer-events-none" />
 
         <div className="max-w-6xl mx-auto px-4 relative z-10">
@@ -240,9 +287,7 @@ export default function LandingPage() {
                 </p>
               </motion.div>
               <motion.div variants={fadeUp} className="flex-1 w-full">
-                {/* CONTENEDOR DE IMAGEN */}
                 <div className="aspect-video rounded-xl bg-[#0f172a] border border-white/10 shadow-2xl overflow-hidden relative group">
-                  {/* REEMPLAZAR ESTE DIV POR TU IMAGEN: <img src="/captura-1.png" alt="Cargar chat" className="w-full h-full object-cover" /> */}
                   <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 to-transparent flex items-center justify-center">
                     <span className="text-sky-100/30 font-medium flex flex-col items-center gap-2">
                       <Download className="w-8 h-8" />
@@ -253,7 +298,7 @@ export default function LandingPage() {
               </motion.div>
             </motion.div>
 
-            {/* PASO 2 (Invertido) */}
+            {/* PASO 2 */}
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={staggerContainer} 
               className="flex flex-col md:flex-row-reverse items-center gap-12"
             >
@@ -267,9 +312,7 @@ export default function LandingPage() {
                 </p>
               </motion.div>
               <motion.div variants={fadeUp} className="flex-1 w-full">
-                {/* CONTENEDOR DE IMAGEN */}
                 <div className="aspect-video rounded-xl bg-[#0f172a] border border-white/10 shadow-2xl overflow-hidden relative group">
-                  {/* REEMPLAZAR ESTE DIV POR TU IMAGEN */}
                   <div className="absolute inset-0 bg-gradient-to-bl from-sky-500/5 to-transparent flex items-center justify-center">
                     <span className="text-sky-100/30 font-medium flex flex-col items-center gap-2">
                       <Search className="w-8 h-8" />
@@ -294,9 +337,7 @@ export default function LandingPage() {
                 </p>
               </motion.div>
               <motion.div variants={fadeUp} className="flex-1 w-full">
-                {/* CONTENEDOR DE IMAGEN */}
                 <div className="aspect-video rounded-xl bg-[#0f172a] border border-white/10 shadow-2xl overflow-hidden relative group">
-                  {/* REEMPLAZAR ESTE DIV POR TU IMAGEN */}
                   <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 to-transparent flex items-center justify-center">
                     <span className="text-sky-100/30 font-medium flex flex-col items-center gap-2">
                       <FileText className="w-8 h-8" />
@@ -311,7 +352,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* --- BENEFICIOS TÉCNICOS (Antiguo Features) --- */}
+      {/* --- BENEFICIOS TÉCNICOS --- */}
       <section id="features" className="py-24 border-t border-white/5 bg-[#070b14]">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-16">
@@ -352,65 +393,85 @@ export default function LandingPage() {
             {/* 1. PLAN COMUNIDAD */}
             <div className="rounded-2xl bg-[#0f172a] border border-white/10 p-8 flex flex-col h-full transition-all duration-300 hover:-translate-y-3 hover:shadow-2xl hover:border-white/20">
               <h3 className="text-2xl font-bold text-white mb-2 flex items-baseline gap-2">
-                Edición Comunidad <span className="text-lg font-semibold text-sky-500">(Beta)</span>
+                Comunidad <span className="text-lg font-semibold text-sky-500">(Beta)</span>
               </h3>
-              <p className="text-sky-100/50 mb-6 text-sm">Para estudiantes e investigaciones menores.</p>
+              {/* Fix: min-h-[48px] alinea los precios sin importar si el texto ocupa 1 o 2 líneas */}
+              <p className="text-sky-100/50 mb-6 text-sm min-h-[48px]">Para estudiantes e investigaciones menores.</p>
               <div className="text-3xl font-bold text-white mb-8">Gratis</div>
               
               <ul className="space-y-4 mb-8 flex-1 text-sm">
-                <li className="flex items-start gap-3 text-sky-100/80"><Check className="w-5 h-5 text-sky-500 shrink-0" /> Procesamiento básico (hasta 15k msjs)</li>
-                <li className="flex items-start gap-3 text-sky-100/80"><Check className="w-5 h-5 text-sky-500 shrink-0" /> Búsqueda global de palabras clave</li>
-                <li className="flex items-start gap-3 text-sky-100/80"><Check className="w-5 h-5 text-sky-500 shrink-0" /> Exportación a PDF (Marca de agua)</li>
-                <li className="flex items-start gap-3 text-white/30"><Check className="w-5 h-5 text-white/20 shrink-0" /> Sin cálculo de Hashes forenses</li>
-                <li className="flex items-start gap-3 text-white/30"><Check className="w-5 h-5 text-white/20 shrink-0" /> Requiere conexión a internet</li>
+                <li className="flex items-start gap-3 text-sky-100/80"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> <span className="leading-tight">Procesamiento básico (hasta 15k msjs)</span></li>
+                <li className="flex items-start gap-3 text-sky-100/80"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> <span className="leading-tight">Búsqueda global de palabras clave</span></li>
+                <li className="flex items-start gap-3 text-sky-100/80"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> <span className="leading-tight">Exportación a PDF (Marca de agua)</span></li>
+                <li className="flex items-start gap-3 text-white/30"><CheckCircle2 className="w-5 h-5 text-white/20 shrink-0" /> <span className="leading-tight">Sin cálculo de Hashes forenses</span></li>
+                <li className="flex items-start gap-3 text-white/30"><CheckCircle2 className="w-5 h-5 text-white/20 shrink-0" /> <span className="leading-tight">Requiere conexión a internet</span></li>
               </ul>
-              <button className="w-full py-3 rounded-xl border border-white/10 text-white font-medium hover:bg-white/5 transition-colors mt-auto">
-                Comenzar Gratis
-              </button>
+              
+              {/* Fix: Contenedor con mt-auto para empujar los botones siempre al mismo nivel abajo */}
+              <div className="mt-auto pt-4">
+                <SignedOut>
+                  <SignInButton mode="modal">
+                    <button className="w-full py-3 rounded-xl border border-white/10 text-white font-medium hover:bg-white/5 transition-colors">
+                      Comenzar Gratis
+                    </button>
+                  </SignInButton>
+                </SignedOut>
+                <SignedIn>
+                  <button disabled className="w-full py-3 rounded-xl border border-white/5 bg-white/5 text-white/50 font-medium cursor-not-allowed">
+                    Plan Actual
+                  </button>
+                </SignedIn>
+              </div>
             </div>
           
-            {/* 2. PLAN PERICIAL (Destacado - El más vendido) */}
+            {/* 2. PLAN PERICIAL */}
             <div className="rounded-2xl bg-gradient-to-b from-[#0f172a] to-[#0a101f] border border-sky-500/50 p-8 flex flex-col relative shadow-[0_0_30px_rgba(14,165,233,0.15)] h-full transition-all duration-300 hover:-translate-y-3 hover:shadow-[0_0_45px_rgba(14,165,233,0.3)] hover:border-sky-400">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-sky-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider whitespace-nowrap">
                 Recomendado para Peritos
               </div>
               <h3 className="text-2xl font-bold text-white mb-2 flex items-baseline gap-2">
-                Licencia Pericial <span className="text-lg font-semibold text-sky-400">(Beta)</span>
+                Pericial <span className="text-lg font-semibold text-sky-400">(Beta)</span>
               </h3>
-              <p className="text-sky-100/50 mb-6 text-sm">Rigor técnico y validez legal para presentaciones judiciales.</p>
+              <p className="text-sky-100/50 mb-6 text-sm min-h-[48px]">Rigor técnico y validez legal para presentaciones judiciales.</p>
               <div className="text-3xl font-bold text-sky-400 mb-8">Consultar</div>
               
               <ul className="space-y-4 mb-8 flex-1 text-sm">
-                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-sky-400 shrink-0" /> Procesamiento masivo ilimitado</li>
-                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-sky-400 shrink-0" /> Hashes MD5 y SHA-256 automáticos</li>
-                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-sky-400 shrink-0" /> Reporte PDF Forense profesional</li>
-                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-sky-400 shrink-0" /> Privacidad Absoluta (Modo Offline)</li>
-                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-sky-400 shrink-0" /> Soporte técnico por correo</li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> <span className="leading-tight">Procesamiento masivo ilimitado</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> <span className="leading-tight">Hashes MD5 y SHA-256 automáticos</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> <span className="leading-tight">Reporte PDF Forense profesional</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> <span className="leading-tight">Privacidad Absoluta (Modo Offline)</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> <span className="leading-tight">Soporte técnico por correo</span></li>
               </ul>
-              <button className="w-full py-3 rounded-xl bg-sky-500 text-white font-bold hover:bg-sky-400 transition-colors shadow-[0_0_20px_rgba(14,165,233,0.3)] mt-auto">
-                Solicitar Licencia
-              </button>
+              
+              <div className="mt-auto pt-4">
+                <a href="https://wa.me/5491100000000?text=Hola,%20quiero%20información%20sobre%20la%20Licencia%20Pericial%20de%20eVidensTalk" target="_blank" rel="noopener noreferrer" className="w-full py-3 rounded-xl bg-sky-500 text-white font-bold hover:bg-sky-400 transition-colors shadow-[0_0_20px_rgba(14,165,233,0.3)] block text-center">
+                  Solicitar Licencia
+                </a>
+              </div>
             </div>
 
-            {/* 3. PLAN INSTITUCIONAL (El "Premium") */}
+            {/* 3. PLAN INSTITUCIONAL */}
             <div className="rounded-2xl bg-[#0f172a] border border-indigo-500/30 p-8 flex flex-col h-full relative overflow-hidden transition-all duration-300 hover:-translate-y-3 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] hover:border-indigo-500/50">
               <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 blur-2xl rounded-full"></div>
               <h3 className="text-2xl font-bold text-white mb-2 flex items-baseline gap-2">
                 Institucional <span className="text-lg font-semibold text-indigo-400">(Beta)</span>
               </h3>
-              <p className="text-sky-100/50 mb-6 text-sm">Para estudios jurídicos, agencias y fuerzas de seguridad.</p>
+              <p className="text-sky-100/50 mb-6 text-sm min-h-[48px]">Para estudios jurídicos, agencias y fuerzas de seguridad.</p>
               <div className="text-3xl font-bold text-indigo-400 mb-8">A Medida</div>
               
               <ul className="space-y-4 mb-8 flex-1 text-sm">
-                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-indigo-400 shrink-0" /> Todo lo de la Licencia Pericial</li>
-                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="font-semibold">Marca Blanca:</span> Logo de tu institución en PDFs</li>
-                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-indigo-400 shrink-0" /> Multi-licencia (Hasta 5 equipos)</li>
-                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-indigo-400 shrink-0" /> Implementación y capacitación</li>
-                <li className="flex items-start gap-3 text-white"><Check className="w-5 h-5 text-indigo-400 shrink-0" /> Canal de soporte VIP directo</li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight">Todo lo de la Licencia Pericial</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight"><span className="font-semibold">Marca Blanca:</span> Logo de tu institución en PDFs</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight">Multi-licencia (Hasta 5 equipos)</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight">Implementación y capacitación</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight">Canal de soporte VIP directo</span></li>
               </ul>
-              <button className="w-full py-3 rounded-xl border border-indigo-500/50 text-indigo-300 font-medium hover:bg-indigo-500/10 transition-colors mt-auto">
-                Contactar Ventas
-              </button>
+              
+              <div className="mt-auto pt-4">
+                <a href="mailto:evidenstalk@gmail.com?subject=Consulta%20Plan%20Institucional" className="w-full py-3 rounded-xl border border-indigo-500/50 text-indigo-300 font-medium hover:bg-indigo-500/10 transition-colors block text-center">
+                  Contactar Ventas
+                </a>
+              </div>
             </div>
 
           </div>
@@ -562,7 +623,6 @@ function FeatureCard({ icon, title, description }: { icon: React.ReactNode, titl
   );
 }
 
-// --- NUEVO COMPONENTE FAQ ITEM ---
 function FAQItem({ question, answer }: { question: string, answer: string }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -591,4 +651,4 @@ function FAQItem({ question, answer }: { question: string, answer: string }) {
       </AnimatePresence>
     </div>
   );
-}  
+}
