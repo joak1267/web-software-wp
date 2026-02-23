@@ -3,8 +3,8 @@ import { MercadoPagoConfig, Preference } from "mercadopago";
 
 export async function POST(request: Request) {
   try {
-    // 1. Recibir el plan desde el frontend
-    const { plan } = await request.json();
+    // 1. Recibir el plan, ciclo y descuento desde el frontend
+    const { plan, ciclo, descuento } = await request.json();
 
     // 2. Configuración de precios y lógica de negocio
     const valorDolarFijo = 1400; // Valor solicitado
@@ -14,13 +14,19 @@ export async function POST(request: Request) {
     const dominioReal = "https://evidenstalk.vercel.app"; // Tu dominio
 
     if (plan === "pericial") {
-      precioDolares = 19.99; // Precio solicitado
-      tituloItem = "eVidensTalk - Licencia Pericial";
+      precioDolares = ciclo === "anual" ? 239.99 : 19.99; // Precio mensual o anual
+      tituloItem = `eVidensTalk - Licencia Pericial (${ciclo === "anual" ? "1 Año" : "1 Mes"})`;
       urlExito = `${dominioReal}/pago-exitoso`; 
     } else if (plan === "institucional") {
-      precioDolares = 100; // Precio solicitado
-      tituloItem = "eVidensTalk - Licencia Institucional";
+      precioDolares = ciclo === "anual" ? 1200 : 100; // Precio mensual o anual
+      tituloItem = `eVidensTalk - Licencia Institucional (${ciclo === "anual" ? "1 Año" : "1 Mes"})`;
       urlExito = `${dominioReal}/pago-exitoso-institucional`;
+    }
+
+    // Aplicar descuento si existe y es mayor a 0
+    if (descuento && descuento > 0) {
+      precioDolares = precioDolares - (precioDolares * (descuento / 100));
+      tituloItem += ` (${descuento}% OFF)`;
     }
 
     const precioEnPesos = Math.round(precioDolares * valorDolarFijo);
@@ -34,7 +40,7 @@ export async function POST(request: Request) {
       body: {
         items: [
           {
-            id: `licencia-${plan}`,
+            id: `licencia-${plan}-${ciclo || 'mensual'}`,
             title: tituloItem,
             quantity: 1,
             unit_price: precioEnPesos,

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth, SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { useAuth, SignInButton, SignedIn, SignedOut, UserButton, useUser } from "@clerk/nextjs";
 import emailjs from '@emailjs/browser';
+import { createClient } from "@supabase/supabase-js";
 import { 
   Bug,
   Mail, 
@@ -16,8 +17,24 @@ import {
   ChevronDown,
   Briefcase,
   X,
-  User
+  User,
+  Ticket,
+  Key // Añadimos el ícono de llave para la nueva pestaña
 } from "lucide-react";
+
+// --- IMPORTAMOS EL NUEVO COMPONENTE DE LICENCIA ---
+import LicenseTab from './components/LicenseTab';
+
+// --- CONEXIÓN A SUPABASE ---
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// --- CONFIGURACIÓN DE PRECIOS BASE ---
+const PRECIOS = {
+  pericial: { mensual: 19.99, anual: 239.99 },
+  institucional: { mensual: 100, anual: 1200 }
+};
 
 // --- CONFIGURACIÓN DE ANIMACIONES ---
 const fadeUp: any = {
@@ -32,6 +49,8 @@ const staggerContainer: any = {
 
 export default function LandingPage() {
   const { userId } = useAuth();
+  const { user } = useUser(); // Extraemos los datos completos de Clerk
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success'>('idle');
@@ -41,6 +60,142 @@ export default function LandingPage() {
   const [proSubmitStatus, setProSubmitStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const [proFormData, setProFormData] = useState({ name: '', email: '' });
 
+  // --- ESTADOS: CANJE Y LECTURA DE PLAN ---
+  const [planActual, setPlanActual] = useState("cargando...");
+  const [promoCode, setPromoCode] = useState("");
+  const [redeemStatus, setRedeemStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [redeemMessage, setRedeemMessage] = useState("");
+  
+  // --- NUEVO ESTADO: LICENCIA ---
+  const [licencia, setLicencia] = useState("Cargando licencia...");
+
+  // ESTADO NUEVO: Controla si se muestra el precio mensual o anual
+  const [cicloFacturacion, setCicloFacturacion] = useState<'mensual' | 'anual'>('mensual');
+
+  // ESTADOS NUEVOS: Descuentos leídos desde Supabase
+  const [descuentoPericial, setDescuentoPericial] = useState(0);
+  const [descuentoInstitucional, setDescuentoInstitucional] = useState(0);
+
+  // Variable para forzar visualmente el panel Admin
+  const isAdmin = user?.primaryEmailAddress?.emailAddress === "evidenstalk@gmail.com";
+
+  // --- ESCÁNER DE SUPABASE ACTUALIZADO ---
+  useEffect(() => {
+    // Escáner de descuentos desde la tabla configuración
+    const cargarDescuentos = async () => {
+      const { data } = await supabase.from('configuracion').select('*').eq('id', 1).single();
+      if (data) {
+        setDescuentoPericial(data.descuento_pericial || 0);
+        setDescuentoInstitucional(data.descuento_institucional || 0);
+      }
+    };
+    cargarDescuentos();
+
+    if (user) {
+      const sincronizarUsuario = async () => {
+        const email = user.primaryEmailAddress?.emailAddress;
+        if (!email) return;
+
+        // --- NUEVA BÚSQUEDA: Traemos el password/licencia de la tabla 'users' ---
+        const { data: userData } = await supabase
+          .from('users')
+          .select('password')
+          .eq('email', email)
+          .single();
+        
+        if (userData && userData.password) {
+          setLicencia(userData.password);
+        } else {
+          setLicencia("LICENCIA-NO-ENCONTRADA");
+        }
+
+        // 1. Guarda al usuario en 'perfiles' si no existe
+        const { error } = await supabase
+          .from('perfiles')
+          .upsert({ 
+            id: user.id, 
+            email: email 
+          }, { onConflict: 'id' });
+
+        if (!error) {
+          // 2. Lee el plan actual de la base de datos
+          const { data } = await supabase
+            .from('perfiles')
+            .select('plan_actual')
+            .eq('id', user.id)
+            .single();
+            
+          if (data) {
+            setPlanActual(data.plan_actual);
+          }
+        } else {
+          console.error("Error guardando perfil en Supabase:", error);
+        }
+      };
+      
+      sincronizarUsuario();
+    }
+  }, [user]);
+
+  // --- LÓGICA DE CANJEO DE CÓDIGO PROMOCIONAL ---
+  const handleRedeemCode = async () => {
+    if (!promoCode.trim()) return;
+    setRedeemStatus('loading');
+    setRedeemMessage("");
+
+    try {
+      // 1. Verificamos si el código existe y no está usado
+      const { data: codeData, error: codeError } = await supabase
+        .from('codigos_promocionales')
+        .select('*')
+        .eq('codigo', promoCode.trim().toUpperCase())
+        .eq('usado', false)
+        .single();
+
+      if (codeError || !codeData) {
+        setRedeemStatus('error');
+        setRedeemMessage("Código inválido, expirado o ya utilizado.");
+        return;
+      }
+
+      // 2. Quemamos el código (lo marcamos usado)
+      const { error: updateCodeError } = await supabase
+        .from('codigos_promocionales')
+        .update({ 
+          usado: true, 
+          usado_por: user?.id,
+          fecha_uso: new Date().toISOString()
+        })
+        .eq('id', codeData.id);
+
+      if (updateCodeError) throw updateCodeError;
+
+      // 3. Le sumamos 1 año al perfil del usuario y le damos el plan
+      const unAnioDesdeHoy = new Date();
+      unAnioDesdeHoy.setFullYear(unAnioDesdeHoy.getFullYear() + 1);
+
+      const { error: updateUserError } = await supabase
+        .from('perfiles')
+        .update({ 
+          plan_actual: codeData.plan_otorgado,
+          fecha_vencimiento: unAnioDesdeHoy.toISOString()
+        })
+        .eq('id', user?.id);
+
+      if (updateUserError) throw updateUserError;
+
+      // 4. Éxito: actualizamos la pantalla
+      setRedeemStatus('success');
+      setRedeemMessage(`¡Felicidades! Se ha activado tu Plan ${codeData.plan_otorgado.toUpperCase()} por 1 año.`);
+      setPlanActual(codeData.plan_otorgado); 
+      setPromoCode(""); 
+
+    } catch (error) {
+      console.error("Error canjeando código:", error);
+      setRedeemStatus('error');
+      setRedeemMessage("Hubo un error de conexión. Intenta de nuevo.");
+    }
+  };
 
   const handleCheckout = async (planName: string) => {
     // 1. Verificación de seguridad: ¿Está logueado?
@@ -51,9 +206,14 @@ export default function LandingPage() {
 
     setIsCheckingOut(true);
     try {
+      const descuentoAplicado = planName === 'pericial' ? descuentoPericial : descuentoInstitucional;
       const res = await fetch('/api/checkout', { 
         method: 'POST',
-        body: JSON.stringify({ plan: planName }) 
+        body: JSON.stringify({ 
+          plan: planName,
+          ciclo: cicloFacturacion,
+          descuento: descuentoAplicado
+        }) 
       });
       const data = await res.json();
       
@@ -107,6 +267,13 @@ export default function LandingPage() {
     }
   };
 
+  const calcularPrecioFinal = (precioBase: number, descuento: number) => {
+    if (descuento > 0) {
+      return (precioBase - (precioBase * (descuento / 100))).toFixed(2);
+    }
+    return precioBase.toFixed(2);
+  };
+
   return (
     <div className="relative min-h-screen bg-[#0b1325] selection:bg-sky-500/30 font-sans">
       
@@ -147,13 +314,23 @@ export default function LandingPage() {
             </SignedOut>
 
             <SignedIn>
-              {/* Diseño del Avatar Azul Personalizado con los menús de Clerk ocultos encima */}
+              {/* --- BOTÓN ADMIN --- */}
+              {isAdmin && (
+                <a 
+                  href="/admin" 
+                  className="hidden sm:flex items-center gap-2 text-sm font-bold border border-amber-500/50 bg-amber-500/10 px-4 py-2 rounded-full text-amber-400 hover:bg-amber-500/20 transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)]"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  Admin
+                </a>
+              )}
+              {/* Diseño del Avatar Azul Personalizado */}
               <div className="relative flex items-center justify-center w-10 h-10 rounded-lg border border-sky-500/30 bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 transition-all shadow-[0_0_10px_rgba(14,165,233,0.1)] group cursor-pointer">
                 
                 {/* El ícono azul visible */}
                 <User className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 
-                {/* El botón de Clerk invisible por encima (opacity-0) */}
+                {/* El botón de Clerk invisible por encima */}
                 <div className="absolute inset-0 z-10 opacity-0">
                   <UserButton 
                     afterSignOutUrl="/" 
@@ -165,7 +342,7 @@ export default function LandingPage() {
                       }
                     }}
                   >
-                    {/* BOTÓN RÁPIDO EN EL MENÚ DESPLEGABLE */}
+                    {/* BOTÓN RÁPIDO: DESCARGAR */}
                     <UserButton.MenuItems>
                       <UserButton.Action 
                         label="Descargar eVidensTalk" 
@@ -173,8 +350,17 @@ export default function LandingPage() {
                         onClick={() => setIsModalOpen(true)} 
                       />
                     </UserButton.MenuItems>
+
+                    {/* --- NUEVA PESTAÑA: MI LICENCIA --- */}
+                    <UserButton.UserProfilePage 
+                      label="Mi Licencia" 
+                      url="licencia" 
+                      labelIcon={<Key className="w-4 h-4" />}
+                    >
+                      <LicenseTab licencia={licencia} />
+                    </UserButton.UserProfilePage>
                     
-                    {/* PANEL PERSONALIZADO DENTRO DE "MANAGE ACCOUNT" */}
+                    {/* PANEL: SUSCRIPCIÓN Y PLAN */}
                   <UserButton.UserProfilePage 
                     label="Suscripción y Plan" 
                     url="suscripcion" 
@@ -190,16 +376,59 @@ export default function LandingPage() {
                         
                         <p className="text-sm font-semibold text-sky-100/50 mb-2">Plan Actual</p>
                         <div className="flex items-center gap-3">
-                          <span className="text-3xl font-black text-emerald-400 uppercase tracking-wide drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]">
-                            Comunidad
+                          <span className={`text-3xl font-black uppercase tracking-wide drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]
+                            ${isAdmin ? 'text-amber-400' : planActual === 'pericial' ? 'text-sky-400' : planActual === 'institucional' ? 'text-indigo-400' : 'text-emerald-400'}`}>
+                            {isAdmin ? 'ADMIN' : planActual}
                           </span>
-                          <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                          <span className={`border px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
+                            ${isAdmin ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}>
                             Activo
                           </span>
                         </div>
                         <p className="text-sm text-sky-100/70 mt-4 leading-relaxed relative z-10">
-                          Tienes acceso a las herramientas de procesamiento básico. El plan no tiene fecha de vencimiento y es completamente gratuito.
+                          {isAdmin
+                            ? 'Cuenta de administrador con control total sobre las configuraciones y herramientas premium de eVidensTalk.'
+                            : planActual === 'comunidad'
+                            ? 'Tienes acceso a las herramientas de procesamiento básico. El plan no tiene fecha de vencimiento y es completamente gratuito.'
+                            : 'Tienes acceso total a las funciones avanzadas, procesamiento ilimitado y firmas Hash de eVidensTalk.'}
                         </p>
+                      </div>
+
+                      {/* CANJEAR CÓDIGO PROMOCIONAL */}
+                      <div className="mb-8 bg-[#070b14]/50 border border-white/5 rounded-xl p-5 relative group hover:border-white/10 transition-colors">
+                        <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-amber-500 to-transparent rounded-l-xl opacity-50"></div>
+                        
+                        <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2 pl-2">
+                          <Ticket className="w-4 h-4 text-amber-400" />
+                          Canjear Código Promocional
+                        </h3>
+                        
+                        <div className="flex flex-col sm:flex-row gap-2 pl-2">
+                          <input
+                            type="text"
+                            value={promoCode}
+                            onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                            placeholder="EJ: PERICIAL-A1B2C3"
+                            className="flex-1 bg-[#0f172a] border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-sky-100/30 focus:outline-none focus:border-amber-500/50 transition-colors uppercase font-mono text-sm tracking-widest shadow-inner"
+                          />
+                          <button
+                            onClick={handleRedeemCode}
+                            disabled={redeemStatus === 'loading' || !promoCode.trim()}
+                            className="bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold py-2.5 px-6 rounded-lg transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(245,158,11,0.2)]"
+                          >
+                            {redeemStatus === 'loading' ? 'Validando...' : 'Canjear'}
+                          </button>
+                        </div>
+                        
+                        {/* Mensaje de respuesta del canje */}
+                        {redeemMessage && (
+                          <motion.p 
+                            initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+                            className={`mt-3 pl-2 text-xs font-bold ${redeemStatus === 'success' ? 'text-emerald-400' : 'text-red-400'}`}
+                          >
+                            {redeemMessage}
+                          </motion.p>
+                        )}
                       </div>
 
                       {/* OPCIONES DE LA CUENTA MEJORADO */}
@@ -210,7 +439,6 @@ export default function LandingPage() {
                         </h3>
                         
                         <div className="bg-[#070b14]/50 border border-white/5 rounded-xl p-5 relative group hover:border-white/10 transition-colors">
-                          {/* Línea lateral decorativa */}
                           <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-sky-500 to-transparent rounded-l-xl opacity-50 group-hover:opacity-100 transition-opacity"></div>
                           
                           <p className="text-sm text-sky-100/60 leading-relaxed pl-2">
@@ -414,21 +642,42 @@ export default function LandingPage() {
      {/* --- SECCIÓN DE PLANES / PRICING --- */}
       <section id="planes" className="py-24 border-t border-white/5 bg-[#070b14] relative">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-white mb-4">Planes y Licencias</h2>
-            <p className="text-sky-100/60 text-lg">Diseñado para adaptarse a las necesidades de cada investigación.</p>
+            <p className="text-sky-100/60 text-lg mb-8">Diseñado para adaptarse a las necesidades de cada investigación.</p>
+            
+            {/* --- SELECTOR DE MENSUAL / ANUAL --- */}
+            <div className="inline-flex bg-[#0f172a] border border-white/10 p-1.5 rounded-2xl relative z-20 shadow-lg mt-8">
+              <button 
+                onClick={() => setCicloFacturacion('mensual')}
+                className={`relative px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${cicloFacturacion === 'mensual' ? 'text-white shadow-md' : 'text-sky-100/50 hover:text-white'}`}
+              >
+                {cicloFacturacion === 'mensual' && <motion.div layoutId="bg-pill" className="absolute inset-0 bg-sky-500 rounded-xl -z-10" />}
+                <span className="relative z-10">Mensual</span>
+              </button>
+              <button 
+                onClick={() => setCicloFacturacion('anual')}
+                className={`relative px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${cicloFacturacion === 'anual' ? 'text-white shadow-md' : 'text-sky-100/50 hover:text-white'}`}
+              >
+                {cicloFacturacion === 'anual' && <motion.div layoutId="bg-pill" className="absolute inset-0 bg-sky-500 rounded-xl -z-10" />}
+                <span className="relative z-10 flex items-center gap-2">Anual <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full uppercase tracking-widest text-white">-Ahorrá</span></span>
+              </button>
+            </div>
+            
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch mt-4">
             
             {/* 1. PLAN COMUNIDAD */}
             <div className="rounded-2xl bg-[#0f172a] border border-white/10 p-8 flex flex-col h-full transition-all duration-300 hover:-translate-y-3 hover:shadow-2xl hover:border-white/20">
               <h3 className="text-2xl font-bold text-white mb-2 flex items-baseline gap-2">
                 Comunidad <span className="text-lg font-semibold text-sky-500">(Beta)</span>
               </h3>
-              {/* Fix: min-h-[48px] alinea los precios sin importar si el texto ocupa 1 o 2 líneas */}
               <p className="text-sky-100/50 mb-6 text-sm min-h-[48px]">Para estudiantes e investigaciones menores.</p>
-              <div className="text-3xl font-bold text-white mb-8">Gratis</div>
+              
+              <div className="h-[60px] flex items-center mb-8">
+                <span className="text-3xl font-bold text-white">Gratis</span>
+              </div>
               
               <ul className="space-y-4 mb-8 flex-1 text-sm">
                 <li className="flex items-start gap-3 text-sky-100/80"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> <span className="leading-tight">Procesamiento básico (hasta 15k msjs)</span></li>
@@ -438,7 +687,6 @@ export default function LandingPage() {
                 <li className="flex items-start gap-3 text-white/30"><CheckCircle2 className="w-5 h-5 text-white/20 shrink-0" /> <span className="leading-tight">Requiere conexión a internet</span></li>
               </ul>
               
-              {/* Fix: Contenedor con mt-auto para empujar los botones siempre al mismo nivel abajo */}
               <div className="mt-auto pt-4">
                 <SignedOut>
                   <SignInButton mode="modal">
@@ -464,7 +712,29 @@ export default function LandingPage() {
                 Pericial <span className="text-lg font-semibold text-sky-400">(Beta)</span>
               </h3>
               <p className="text-sky-100/50 mb-6 text-sm min-h-[48px]">Rigor técnico y validez legal para presentaciones judiciales.</p>
-              <div className="text-3xl font-bold text-sky-400 mb-8">$19,99</div>
+              
+              {/* --- PRECIO DINÁMICO PERICIAL (DISEÑO REPLICADO) --- */}
+              <div className="h-[60px] flex flex-col justify-center mb-8 relative">
+                {descuentoPericial > 0 ? (
+                  <>
+                    <span className="text-sm text-sky-100/40 line-through font-medium absolute -top-1 tracking-wider">
+                      ${PRECIOS.pericial[cicloFacturacion]}
+                    </span>
+                    <div className="text-3xl font-bold text-sky-400 flex items-center gap-2 mt-4">
+                      ${calcularPrecioFinal(PRECIOS.pericial[cicloFacturacion], descuentoPericial)}
+                      <span className="text-sm text-sky-100/50 font-normal">/ {cicloFacturacion === 'mensual' ? 'mes' : 'año'}</span>
+                      <span className="bg-[#0f1f1a] border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest ml-1">
+                        {descuentoPericial}% OFF
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-3xl font-bold text-sky-400 flex items-center gap-2">
+                    ${PRECIOS.pericial[cicloFacturacion]}
+                    <span className="text-sm text-sky-100/50 font-normal">/ {cicloFacturacion === 'mensual' ? 'mes' : 'año'}</span>
+                  </div>
+                )}
+              </div>
               
               <ul className="space-y-4 mb-8 flex-1 text-sm">
                 <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> <span className="leading-tight">Procesamiento masivo ilimitado</span></li>
@@ -476,21 +746,21 @@ export default function LandingPage() {
               
               <div className="mt-auto pt-4">
                 <button 
-  onClick={() => handleCheckout("pericial")} 
-  disabled={isCheckingOut}
-  className="w-full py-3 rounded-xl bg-sky-500 text-white font-bold hover:bg-sky-400 transition-colors shadow-[0_0_20px_rgba(14,165,233,0.3)] mt-auto text-center flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed"
->
-  {!userId ? (
-    "Iniciá sesión para comprar"
-  ) : isCheckingOut ? (
-    <span className="flex items-center gap-2">
-      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-      Generando link seguro...
-    </span>
-  ) : (
-    "Obtener Licencia"
-  )}
-</button>
+                  onClick={() => handleCheckout("pericial")} 
+                  disabled={isCheckingOut}
+                  className="w-full py-3 rounded-xl bg-sky-500 text-white font-bold hover:bg-sky-400 transition-colors shadow-[0_0_20px_rgba(14,165,233,0.3)] mt-auto text-center flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {!userId ? (
+                    "Iniciá sesión para comprar"
+                  ) : isCheckingOut ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Generando link seguro...
+                    </span>
+                  ) : (
+                    "Obtener Licencia"
+                  )}
+                </button>
               </div>
             </div>
 
@@ -501,7 +771,29 @@ export default function LandingPage() {
                 Institucional <span className="text-lg font-semibold text-indigo-400">(Beta)</span>
               </h3>
               <p className="text-sky-100/50 mb-6 text-sm min-h-[48px]">Para estudios jurídicos, agencias y fuerzas de seguridad.</p>
-              <div className="text-3xl font-bold text-indigo-400 mb-8">$100</div>
+              
+              {/* --- PRECIO DINÁMICO INSTITUCIONAL (DISEÑO REPLICADO) --- */}
+              <div className="h-[60px] flex flex-col justify-center mb-8 relative">
+                {descuentoInstitucional > 0 ? (
+                  <>
+                    <span className="text-sm text-sky-100/40 line-through font-medium absolute -top-1 tracking-wider">
+                      ${PRECIOS.institucional[cicloFacturacion]}
+                    </span>
+                    <div className="text-3xl font-bold text-indigo-400 flex items-center gap-2 mt-4">
+                      ${calcularPrecioFinal(PRECIOS.institucional[cicloFacturacion], descuentoInstitucional)}
+                      <span className="text-sm text-sky-100/50 font-normal">/ {cicloFacturacion === 'mensual' ? 'mes' : 'año'}</span>
+                      <span className="bg-[#0f1f1a] border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest ml-1">
+                        {descuentoInstitucional}% OFF
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-3xl font-bold text-indigo-400 flex items-center gap-2">
+                    ${PRECIOS.institucional[cicloFacturacion]}
+                    <span className="text-sm text-sky-100/50 font-normal">/ {cicloFacturacion === 'mensual' ? 'mes' : 'año'}</span>
+                  </div>
+                )}
+              </div>
               
               <ul className="space-y-4 mb-8 flex-1 text-sm">
                 <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight">Todo lo de la Licencia Pericial</span></li>
@@ -512,18 +804,18 @@ export default function LandingPage() {
               </ul>
               
               <button 
-  onClick={() => handleCheckout("institucional")}
-  disabled={isCheckingOut}
-  className="w-full py-3 rounded-xl border border-indigo-500/50 text-indigo-300 font-medium hover:bg-indigo-500/10 transition-colors block text-center disabled:opacity-50"
->
-  {!userId ? (
-    "Iniciá sesión para contratar"
-  ) : isCheckingOut ? (
-    "Procesando..."
-  ) : (
-    "Contratar Plan Institucional"
-  )}
-</button>
+                onClick={() => handleCheckout("institucional")}
+                disabled={isCheckingOut}
+                className="w-full py-3 rounded-xl border border-indigo-500/50 text-indigo-300 font-medium hover:bg-indigo-500/10 transition-colors block text-center disabled:opacity-50"
+              >
+                {!userId ? (
+                  "Iniciá sesión para contratar"
+                ) : isCheckingOut ? (
+                  "Procesando..."
+                ) : (
+                  "Contratar Plan Institucional"
+                )}
+              </button>
             </div>
 
           </div>
