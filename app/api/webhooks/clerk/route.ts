@@ -25,8 +25,7 @@ export async function POST(req: Request) {
     return new Response('Error: Faltan headers', { status: 400 });
   }
 
-  // --- EL ARREGLO ESTÁ ACÁ ---
-  const body = await req.text(); // Obtenemos el texto bruto para Svix
+  const body = await req.text();
   const wh = new Webhook(WEBHOOK_SECRET);
   let evt: WebhookEvent;
 
@@ -41,7 +40,6 @@ export async function POST(req: Request) {
     return new Response('Error de verificación', { status: 400 });
   }
 
-  // Ahora que está verificado, procesamos el evento
   const eventType = evt.type;
 
   if (eventType === 'user.created') {
@@ -62,22 +60,23 @@ export async function POST(req: Request) {
 
     if (error) return new Response('Error Supabase', { status: 500 });
 
-    // Envío a EmailJS con fetch
-   try {
+    // --- ENVÍO A EMAILJS (CON TU PRIVATE KEY) ---
+    try {
       const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
         method: 'POST',
         body: JSON.stringify({
-          service_id: 'service_jbxfvq7', // Tu Service ID verificado
-          template_id: 'template_r9x9yp9', // EL ID QUE VISTE VOS (Correcto)
-          user_id: '4GVYXR1W7eanH8yxk',   // Tu Public Key verificada
+          service_id: 'service_jbxfvq7',
+          template_id: 'template_r9x9yp9',
+          user_id: '4GVYXR1W7eanH8yxk',
+          accessToken: 'thK8SJc0fPCflvz5MUMmG', // Acá está tu Private Key
           template_params: {
             user_email: email,
             user_name: nombreUsuario,
             licencia: nuevaLicencia,
-            NOMBRE_PLAN: 'Comunidad (Beta)', // COINCIDE CON TU DISEÑO {{NOMBRE_PLAN}}
+            NOMBRE_PLAN: 'Comunidad (Beta)',
             color_plan: '#e2e8f0'
           }
-        }), 
+        }),
         headers: { 'Content-Type': 'application/json' }
       });
 
@@ -85,11 +84,12 @@ export async function POST(req: Request) {
       if (!emailRes.ok) {
         console.error('❌ Error de EmailJS:', responseText);
       } else {
-        console.log('✉️ Mail enviado con éxito según EmailJS');
+        console.log(`✅ Mail enviado con éxito a ${email}`);
       }
     } catch (e) {
-      console.error('❌ Fallo total en el fetch de mail:', e);
+      console.error('❌ Error enviando mail:', e);
     }
   }
+
   return new Response('Webhook OK', { status: 200 });
 }
