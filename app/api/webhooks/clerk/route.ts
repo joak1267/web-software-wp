@@ -74,6 +74,7 @@ export async function POST(req: Request) {
             user_name: nombreUsuario,
             licencia: nuevaLicencia,
             NOMBRE_PLAN: 'Comunidad (Beta)',
+            nombre_plan: 'Comunidad (Beta)',
             color_plan: '#e2e8f0'
           }
         }),
