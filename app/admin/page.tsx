@@ -84,20 +84,33 @@ export default function AdminDashboard() {
     setGenerando(false);
   };
 
-  // --- NUEVA FUNCIÓN: Guardar ambos descuentos en Supabase ---
+ // --- FUNCIÓN MODIFICADA: Guardar descuentos a través de la API segura ---
   const guardarDescuentos = async () => {
     setGuardandoDescuento(true);
-    const { error } = await supabase.from("configuracion").upsert({ 
-      id: 1, 
-      descuento_pericial: descuentoPericial,
-      descuento_institucional: descuentoInstitucional
-    });
-    setGuardandoDescuento(false);
     
-    if (!error) {
-      alert("¡Descuentos aplicados correctamente en la web!");
-    } else {
-      alert("Error al guardar los descuentos.");
+    try {
+      // Llamamos a nuestro "túnel seguro" en el backend
+      const res = await fetch('/api/admin/guardar-descuentos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          descuentoPericial: descuentoPericial,
+          descuentoInstitucional: descuentoInstitucional
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("✅ ¡Descuentos aplicados correctamente en la web!");
+      } else {
+        alert("❌ Error: " + data.error);
+      }
+    } catch (error) {
+      console.error("Error al conectar con la API:", error);
+      alert("❌ Error de red al guardar los descuentos.");
+    } finally {
+      setGuardandoDescuento(false);
     }
   };
 
