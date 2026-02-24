@@ -57,6 +57,8 @@ export default function LandingPage() {
   const [promoCode, setPromoCode] = useState("");
   const [redeemStatus, setRedeemStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [redeemMessage, setRedeemMessage] = useState("");
+
+  const [isCancelling, setIsCancelling] = useState(false);
   
   // --- NUEVO ESTADO: LICENCIA ---
   const [licencia, setLicencia] = useState("Cargando licencia...");
@@ -70,6 +72,7 @@ export default function LandingPage() {
 
   // Variable para forzar visualmente el panel Admin
   const isAdmin = user?.primaryEmailAddress?.emailAddress === "evidenstalk@gmail.com";
+
 
   // --- ESCÁNER DE SUPABASE ACTUALIZADO ---
   useEffect(() => {
@@ -208,6 +211,32 @@ export default function LandingPage() {
       alert("Hubo un error de conexión.");
     } finally {
       setIsCheckingOut(false);
+    }
+  };
+
+  // --- LÓGICA DE CANCELACIÓN DE SUSCRIPCIÓN ---
+  const handleCancelSubscription = async () => {
+    const confirmar = window.confirm("¿Estás seguro de que deseas cancelar tu suscripción? Podrás seguir usando eVidensTalk hasta el final de tu ciclo de facturación actual.");
+    
+    if (!confirmar) return;
+
+    setIsCancelling(true);
+    try {
+      const res = await fetch('/api/cancelar', { method: 'POST' });
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("✅ " + data.message);
+        // Recargamos la página para actualizar la interfaz
+        window.location.reload();
+      } else {
+        alert("❌ Error: " + data.error);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error de conexión al intentar cancelar.");
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -380,26 +409,30 @@ export default function LandingPage() {
                           <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-sky-500 to-transparent rounded-l-xl opacity-50 group-hover:opacity-100 transition-opacity"></div>
                           
                           <p className="text-sm text-sky-100/60 leading-relaxed pl-2">
-                            Para desbloquear funciones avanzadas como <span className="text-sky-300 font-medium">procesamiento masivo ilimitado</span> y <span className="text-sky-300 font-medium">firmas Hash MD5/SHA-256</span>, o solicitar la cancelación de tu licencia, ponte en contacto con nuestro equipo de ventas.
+                            Para desbloquear funciones avanzadas como <span className="text-sky-300 font-medium">procesamiento masivo ilimitado</span> y <span className="text-sky-300 font-medium">firmas Hash MD5/SHA-256</span>, revisa tus opciones de facturación.
                           </p>
                         </div>
                       </div>
                       
-                      <div className="flex flex-col sm:flex-row gap-4">
+                      {/* BOTONES MEJORADOS DE GESTIÓN */}
+                      <div className="flex flex-col sm:flex-row gap-4 mt-6">
                         <a 
-                          href="https://wa.me/5491100000000?text=Hola,%20quiero%20mejorar%20mi%20plan%20de%20eVidensTalk%20a%20Pericial" 
-                          target="_blank"
-                          rel="noreferrer"
-                          className="bg-sky-500 hover:bg-sky-400 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-[0_0_15px_rgba(14,165,233,0.3)] hover:shadow-[0_0_25px_rgba(14,165,233,0.5)] text-center flex-1"
-                        >
-                          Mejorar Plan
-                        </a>
-                        <a 
-                          href="mailto:evidenstalk@gmail.com?subject=Gestion%20de%20Suscripcion%20(Cancelar/Modificar)" 
+                          href="mailto:evidenstalk@gmail.com?subject=Consulta%20sobre%20mi%20Suscripción" 
                           className="bg-[#0b1325] hover:bg-white/5 text-sky-100/80 font-semibold py-3 px-6 rounded-xl border border-white/10 transition-colors text-center flex-1"
                         >
                           Contactar Soporte
                         </a>
+
+                        {/* Mostrar botón de cancelar SOLO si tiene un plan de pago y no es admin */}
+                        {(planActual === 'pericial' || planActual === 'institucional') && !isAdmin && (
+                          <button 
+                            onClick={handleCancelSubscription}
+                            disabled={isCancelling}
+                            className="bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold py-3 px-6 rounded-xl border border-red-500/30 hover:border-red-500/50 transition-all text-center flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isCancelling ? 'Cancelando...' : 'Cancelar Suscripción'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </UserButton.UserProfilePage>
@@ -809,7 +842,7 @@ export default function LandingPage() {
             />
             <FAQItem 
               question="¿Qué validez legal tienen los reportes generados?" 
-              answer="Los reportes de la versión Enterprise/Pro incluyen el cálculo automático de firmas Hash (MD5 y SHA-256) del archivo original procesado. Esto garantiza el principio de inalterabilidad de la evidencia digital, requisito fundamental para presentarla en procesos judiciales o peritajes." 
+              answer="Los reportes de la versión Pericial/Institucional incluyen el cálculo automático de firmas Hash (MD5 y SHA-256) del archivo original procesado. Esto garantiza el principio de inalterabilidad de la evidencia digital, requisito fundamental para presentarla en procesos judiciales o peritajes." 
             />
             <FAQItem 
               question="¿Necesito conexión a internet para usar el software?" 
