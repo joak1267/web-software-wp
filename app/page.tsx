@@ -230,28 +230,13 @@ export default function LandingPage() {
     }
   };
 
- // --- LÓGICA DE DESCARGA ACTUALIZADA (v1.2.0) ---
+ // --- LÓGICA DE DESCARGA DIRECTA (Sin mandar mails viejos) ---
   const handleDownloadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitStatus('loading');
-    const baseUrl = window.location.origin;
-    const pdfLink = `${baseUrl}/guia-procedimiento-pericial.pdf`;
     
     try {
-      await emailjs.send(
-        'service_82dhp4l', 
-        'template_aydxraq',
-        {
-          user_name: formData.name, 
-          user_email: formData.email,
-          user_phone: "Descarga Enterprise v1.2",
-          link_guia: pdfLink,
-          message: `¡NUEVO USUARIO! ${formData.name} ha descargado eVidensTalk Enterprise v1.2.0.`
-        },
-        'jeM9wPRA9hYUXfgAc'
-      );
-      setSubmitStatus('success');
-      
+      // Descarga directa del .exe oficial
       const link = document.createElement('a');
       link.href = 'https://github.com/joak1267/evidenstalk-enterprise/releases/download/v1.2.0/eVidensTalk.Enterprise.Setup.1.2.0.exe';
       link.download = ''; 
@@ -259,10 +244,15 @@ export default function LandingPage() {
       link.click(); 
       document.body.removeChild(link);
       
-      setTimeout(() => { setIsModalOpen(false); setSubmitStatus('idle'); setFormData({ name: '', email: '' }); }, 2500);
+      setSubmitStatus('success');
+      setTimeout(() => { 
+        setIsModalOpen(false); 
+        setSubmitStatus('idle'); 
+        setFormData({ name: '', email: '' }); 
+      }, 2500);
     } catch (error) {
-      console.error(error); 
-      alert("Hubo un problema. Por favor, intenta de nuevo."); 
+      console.error("Error al descargar:", error); 
+      alert("Hubo un problema con la descarga. Por favor, intenta de nuevo."); 
       setSubmitStatus('idle');
     }
   };

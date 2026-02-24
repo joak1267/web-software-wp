@@ -47,11 +47,17 @@ export async function POST(req: Request) {
 
   // --- ACÁ OCURRE LA MAGIA CUANDO SE REGISTRA ALGUIEN ---
   if (eventType === 'user.created') {
-    const { id, email_addresses } = evt.data;
+    const { id, email_addresses, first_name } = evt.data;
     const email = email_addresses[0]?.email_address;
+    const nombreUsuario = first_name || 'Investigador';
     
     // 1. Inventamos la licencia en este milisegundo
     const nuevaLicencia = generarLicencia();
+    const planInicial = 'comunidad';
+
+    // Lógica de colores para EmailJS
+    const nombre_plan = 'Comunidad (Beta)';
+    const color_plan = '#e2e8f0';
 
     // 2. Nos conectamos a Supabase
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -62,7 +68,7 @@ export async function POST(req: Request) {
     const { error } = await supabase
       .from('users')
       .insert([
-        { id: id, email: email, plan: 'comunidad', password: nuevaLicencia }
+        { id: id, email: email, plan: planInicial, password: nuevaLicencia }
       ]);
 
     if (error) {
@@ -71,6 +77,38 @@ export async function POST(req: Request) {
     }
     
     console.log(`✅ ÉXITO: Usuario ${email} registrado con licencia ${nuevaLicencia}`);
+
+    // 4. ¡ENVIAMOS EL CORREO CON EMAILJS (Cuenta Oficial)!
+    try {
+      const emailData = {
+        service_id: 'service_jbxfvq7',
+        template_id: 'template_r9x9yp9',
+        user_id: '4GVYXR1W7eanH8yxk',
+        template_params: {
+          user_email: email,
+          user_name: nombreUsuario,
+          licencia: nuevaLicencia,
+          nombre_plan: nombre_plan,
+          color_plan: color_plan
+        }
+      };
+
+      const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        body: JSON.stringify(emailData),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!res.ok) {
+        console.error('Error de EmailJS:', await res.text());
+      } else {
+        console.log(`✉️ Correo de licencia enviado a ${email} vía EmailJS`);
+      }
+    } catch (emailError) {
+      console.error('Error ejecutando fetch a EmailJS:', emailError);
+    }
   }
 
   return new Response('Webhook procesado', { status: 200 });
