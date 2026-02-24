@@ -63,27 +63,33 @@ export async function POST(req: Request) {
     if (error) return new Response('Error Supabase', { status: 500 });
 
     // Envío a EmailJS con fetch
-    try {
-      await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+   try {
+      const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
         method: 'POST',
         body: JSON.stringify({
-          service_id: 'service_jbxfvq7',
-          template_id: 'template_r9x9yp9',
-          user_id: '4GVYXR1W7eanH8yxk',
+          service_id: 'service_jbxfvq7', // Tu Service ID verificado
+          template_id: 'template_r9x9yp9', // EL ID QUE VISTE VOS (Correcto)
+          user_id: '4GVYXR1W7eanH8yxk',   // Tu Public Key verificada
           template_params: {
             user_email: email,
             user_name: nombreUsuario,
             licencia: nuevaLicencia,
-            nombre_plan: 'Comunidad (Beta)',
+            NOMBRE_PLAN: 'Comunidad (Beta)', // COINCIDE CON TU DISEÑO {{NOMBRE_PLAN}}
             color_plan: '#e2e8f0'
           }
-        }),
+        }), 
         headers: { 'Content-Type': 'application/json' }
       });
+
+      const responseText = await emailRes.text();
+      if (!emailRes.ok) {
+        console.error('❌ Error de EmailJS:', responseText);
+      } else {
+        console.log('✉️ Mail enviado con éxito según EmailJS');
+      }
     } catch (e) {
-      console.error('Error enviando mail:', e);
+      console.error('❌ Fallo total en el fetch de mail:', e);
     }
   }
-
   return new Response('Webhook OK', { status: 200 });
 }
