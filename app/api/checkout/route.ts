@@ -3,7 +3,7 @@ import { MercadoPagoConfig, PreApproval } from "mercadopago";
 
 export async function POST(request: Request) {
   try {
-    // 1. Recibir datos desde el frontend (¡AHORA INCLUYE EL EMAIL DEL USUARIO!)
+    // 1. Recibir datos desde el frontend
     const body = await request.json();
     const { plan, ciclo, descuento, email } = body;
 
@@ -40,20 +40,18 @@ export async function POST(request: Request) {
 
     // 3. Conexión con Mercado Pago
     const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN! });
-    
-    // 🔥 CAMBIO CLAVE: Usamos PreApproval en lugar de Preference
     const preapproval = new PreApproval(client);
 
     // 4. Crear la suscripción (PreApproval)
     const result = await preapproval.create({
       body: {
         reason: tituloItem,
-        // external_reference es clave para identificar de qué usuario y plan es este pago cuando MercadoPago nos avise por Webhook
         external_reference: `${email}|${plan}|${ciclo}`,
         payer_email: email,
         auto_recurring: {
-          frequency: 1,
-          frequency_type: ciclo === "anual" ? "years" : "months", // Se cobra 1 vez al año o 1 vez al mes
+          // 🔥 EL FIX ESTÁ ACÁ 🔥
+          frequency: ciclo === "anual" ? 12 : 1, // Se cobra cada 12 meses o cada 1 mes
+          frequency_type: "months", // Mercado Pago acepta "months" o "days"
           transaction_amount: precioEnPesos,
           currency_id: "ARS",
         },
