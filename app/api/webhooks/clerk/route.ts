@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
 import { createClient } from '@supabase/supabase-js';
 
+// Función para generar la licencia
 function generarLicencia() {
   const parte1 = Math.random().toString(36).substring(2, 6).toUpperCase();
   const parte2 = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -10,25 +11,29 @@ function generarLicencia() {
 }
 
 export async function POST(req: Request) {
+  // 1. Verificación de secretos del Webhook
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
   if (!WEBHOOK_SECRET) {
+    console.error("Falta WEBHOOK_SECRET en las variables de entorno");
     return new Response('Error: Falta WEBHOOK_SECRET', { status: 500 });
   }
 
+  // 2. Extracción de Headers de Svix
   const headerPayload = await headers();
   const svix_id = headerPayload.get("svix-id");
   const svix_timestamp = headerPayload.get("svix-timestamp");
   const svix_signature = headerPayload.get("svix-signature");
 
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return new Response('Error: Faltan headers', { status: 400 });
+    return new Response('Error: Faltan headers de Svix', { status: 400 });
   }
 
   const body = await req.text();
   const wh = new Webhook(WEBHOOK_SECRET);
   let evt: WebhookEvent;
 
+  // 3. Verificación de la firma del Webhook
   try {
     evt = wh.verify(body, {
       "svix-id": svix_id,
@@ -36,39 +41,70 @@ export async function POST(req: Request) {
       "svix-signature": svix_signature,
     }) as WebhookEvent;
   } catch (err) {
-    console.error('Error de firma:', err);
+    console.error('Error verificando la firma del webhook:', err);
     return new Response('Error de verificación', { status: 400 });
   }
 
   const eventType = evt.type;
 
+  // 4. Lógica para cuando se crea un usuario (Registro)
   if (eventType === 'user.created') {
     const { id, email_addresses, first_name } = evt.data;
-    const email = email_addresses[0]?.email_address;
+    
+    // Obtenemos el email principal
+    const email = email_addresses && email_addresses.length > 0 
+      ? email_addresses[0].email_address 
+      : null;
+      
     const nombreUsuario = first_name || 'Investigador';
     
+    if (!email) {
+       console.error("El usuario creado no tiene email asociado.");
+       return new Response('Usuario sin email', { status: 400 });
+    }
+
     const nuevaLicencia = generarLicencia();
 
+    // 5. Conexión a Supabase (Recomendado: Usar Service Role Key para operaciones de servidor)
+    // Si no tienes configurada SUPABASE_SERVICE_ROLE_KEY, volverá a usar la pública (ANON_KEY), 
+    // pero te sugiero fuertemente agregar la Service Role a tu .env
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      supabaseKey
     );
 
+    // 6. Inserción en la tabla 'users'
     const { error } = await supabase
       .from('users')
-      .insert([{ id, email, plan: 'comunidad', password: nuevaLicencia }]);
+      .insert([{ 
+        id: id, 
+        email: email, 
+        plan: 'comunidad', 
+        password: nuevaLicencia 
+      }]);
 
-    if (error) return new Response('Error Supabase', { status: 500 });
+    if (error) {
+       console.error('Error insertando en Supabase:', error);
+       return new Response('Error Base de Datos', { status: 500 });
+    }
 
-    // --- ENVÍO A EMAILJS (CON TU PRIVATE KEY) ---
+    // 7. Envío de Email mediante EmailJS (Usando variables de entorno)
     try {
+      // Obtenemos credenciales desde el .env
+      const emailJsServiceId = process.env.EMAILJS_SERVICE_ID || 'service_jbxfvq7';
+      const emailJsTemplateId = process.env.EMAILJS_TEMPLATE_ID || 'template_r9x9yp9';
+      const emailJsUserId = process.env.EMAILJS_USER_ID || '4GVYXR1W7eanH8yxk';
+      const emailJsAccessToken = process.env.EMAILJS_ACCESS_TOKEN || 'thK8SJc0fPCflvz5MUMmG';
+
       const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
         method: 'POST',
         body: JSON.stringify({
-          service_id: 'service_jbxfvq7',
-          template_id: 'template_r9x9yp9',
-          user_id: '4GVYXR1W7eanH8yxk',
-          accessToken: 'thK8SJc0fPCflvz5MUMmG', // Acá está tu Private Key
+          service_id: emailJsServiceId,
+          template_id: emailJsTemplateId,
+          user_id: emailJsUserId,
+          accessToken: emailJsAccessToken,
           template_params: {
             user_email: email,
             user_name: nombreUsuario,
@@ -83,14 +119,15 @@ export async function POST(req: Request) {
 
       const responseText = await emailRes.text();
       if (!emailRes.ok) {
-        console.error('❌ Error de EmailJS:', responseText);
+        console.error('❌ Error de EmailJS al enviar:', responseText);
       } else {
-        console.log(`✅ Mail enviado con éxito a ${email}`);
+        console.log(`✅ Mail de bienvenida enviado con éxito a ${email}`);
       }
     } catch (e) {
-      console.error('❌ Error enviando mail:', e);
+      console.error('❌ Error de red conectando con EmailJS:', e);
     }
   }
 
-  return new Response('Webhook OK', { status: 200 });
+  // 8. Respuesta exitosa para Clerk
+  return new Response('Webhook procesado exitosamente', { status: 200 });
 }

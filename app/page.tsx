@@ -16,10 +16,9 @@ import {
   Search,
   ChevronDown,
   Briefcase,
-  X,
   User,
   Ticket,
-  Key // Añadimos el ícono de llave para la nueva pestaña
+  Key
 } from "lucide-react";
 
 // --- IMPORTAMOS EL NUEVO COMPONENTE DE LICENCIA ---
@@ -49,16 +48,9 @@ const staggerContainer: any = {
 
 export default function LandingPage() {
   const { userId } = useAuth();
-  const { user } = useUser(); // Extraemos los datos completos de Clerk
+  const { user } = useUser();
   
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success'>('idle');
-  const [formData, setFormData] = useState({ name: '', email: '' });
-
-  const [isProModalOpen, setIsProModalOpen] = useState(false);
-  const [proSubmitStatus, setProSubmitStatus] = useState<'idle' | 'loading' | 'success'>('idle');
-  const [proFormData, setProFormData] = useState({ name: '', email: '' });
 
   // --- ESTADOS: CANJE Y LECTURA DE PLAN ---
   const [planActual, setPlanActual] = useState("cargando...");
@@ -81,7 +73,6 @@ export default function LandingPage() {
 
   // --- ESCÁNER DE SUPABASE ACTUALIZADO ---
   useEffect(() => {
-    // Escáner de descuentos desde la tabla configuración
     const cargarDescuentos = async () => {
       const { data } = await supabase.from('configuracion').select('*').eq('id', 1).single();
       if (data) {
@@ -96,7 +87,6 @@ export default function LandingPage() {
         const email = user.primaryEmailAddress?.emailAddress;
         if (!email) return;
 
-        // --- NUEVA BÚSQUEDA: Traemos el password/licencia de la tabla 'users' ---
         const { data: userData } = await supabase
           .from('users')
           .select('password')
@@ -109,16 +99,11 @@ export default function LandingPage() {
           setLicencia("LICENCIA-NO-ENCONTRADA");
         }
 
-        // 1. Guarda al usuario en 'perfiles' si no existe
         const { error } = await supabase
           .from('perfiles')
-          .upsert({ 
-            id: user.id, 
-            email: email 
-          }, { onConflict: 'id' });
+          .upsert({ id: user.id, email: email }, { onConflict: 'id' });
 
         if (!error) {
-          // 2. Lee el plan actual de la base de datos
           const { data } = await supabase
             .from('perfiles')
             .select('plan_actual')
@@ -144,7 +129,6 @@ export default function LandingPage() {
     setRedeemMessage("");
 
     try {
-      // 1. Verificamos si el código existe y no está usado
       const { data: codeData, error: codeError } = await supabase
         .from('codigos_promocionales')
         .select('*')
@@ -158,7 +142,6 @@ export default function LandingPage() {
         return;
       }
 
-      // 2. Quemamos el código (lo marcamos usado)
       const { error: updateCodeError } = await supabase
         .from('codigos_promocionales')
         .update({ 
@@ -170,7 +153,6 @@ export default function LandingPage() {
 
       if (updateCodeError) throw updateCodeError;
 
-      // 3. Le sumamos 1 año al perfil del usuario y le damos el plan
       const unAnioDesdeHoy = new Date();
       unAnioDesdeHoy.setFullYear(unAnioDesdeHoy.getFullYear() + 1);
 
@@ -184,7 +166,6 @@ export default function LandingPage() {
 
       if (updateUserError) throw updateUserError;
 
-      // 4. Éxito: actualizamos la pantalla
       setRedeemStatus('success');
       setRedeemMessage(`¡Felicidades! Se ha activado tu Plan ${codeData.plan_otorgado.toUpperCase()} por 1 año.`);
       setPlanActual(codeData.plan_otorgado); 
@@ -198,7 +179,6 @@ export default function LandingPage() {
   };
 
   const handleCheckout = async (planName: string) => {
-    // 1. Verificación de seguridad: ¿Está logueado?
     if (!userId) {
       alert("Para adquirir una licencia, primero debes iniciar sesión.");
       return;
@@ -212,7 +192,8 @@ export default function LandingPage() {
         body: JSON.stringify({ 
           plan: planName,
           ciclo: cicloFacturacion,
-          descuento: descuentoAplicado
+          descuento: descuentoAplicado,
+          email: user?.primaryEmailAddress?.emailAddress
         }) 
       });
       const data = await res.json();
@@ -230,30 +211,18 @@ export default function LandingPage() {
     }
   };
 
- // --- LÓGICA DE DESCARGA DIRECTA (Sin mandar mails viejos) ---
-  const handleDownloadSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitStatus('loading');
-    
+  // --- NUEVA LÓGICA DE DESCARGA DIRECTA ---
+  const handleDirectDownload = () => {
     try {
-      // Descarga directa del .exe oficial
       const link = document.createElement('a');
       link.href = 'https://github.com/joak1267/evidenstalk-enterprise/releases/download/v1.2.0/eVidensTalk.Enterprise.Setup.1.2.0.exe';
       link.download = ''; 
       document.body.appendChild(link); 
       link.click(); 
       document.body.removeChild(link);
-      
-      setSubmitStatus('success');
-      setTimeout(() => { 
-        setIsModalOpen(false); 
-        setSubmitStatus('idle'); 
-        setFormData({ name: '', email: '' }); 
-      }, 2500);
     } catch (error) {
       console.error("Error al descargar:", error); 
       alert("Hubo un problema con la descarga. Por favor, intenta de nuevo."); 
-      setSubmitStatus('idle');
     }
   };
 
@@ -271,7 +240,6 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full glass-panel z-50 border-b-0 border-white/5 bg-[#0b1325]/80 backdrop-blur-md h-16">
         <div className="max-w-6xl mx-auto px-4 h-full flex items-center justify-between relative">
           
-          {/* IZQUIERDA: LOGO */}
           <div className="flex items-center gap-3">
             <img 
               src="/logo.png" 
@@ -283,7 +251,6 @@ export default function LandingPage() {
             </span>
           </div>
 
-          {/* CENTRO: ENLACES */}
           <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-8 text-sm font-medium text-neutral-400">
             <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-sky-400 transition-colors">
               Inicio
@@ -292,7 +259,6 @@ export default function LandingPage() {
             <a href="#planes" className="hover:text-sky-400 transition-colors">Planes</a>
           </div>
 
-          {/* DERECHA: BOTONES DE LOGIN Y AVATAR */}
           <div className="flex items-center gap-4">
             <SignedOut>
               <SignInButton mode="modal">
@@ -304,7 +270,6 @@ export default function LandingPage() {
             </SignedOut>
 
             <SignedIn>
-              {/* --- BOTÓN ADMIN --- */}
               {isAdmin && (
                 <a 
                   href="/admin" 
@@ -314,13 +279,10 @@ export default function LandingPage() {
                   Admin
                 </a>
               )}
-              {/* Diseño del Avatar Azul Personalizado */}
               <div className="relative flex items-center justify-center w-10 h-10 rounded-lg border border-sky-500/30 bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 transition-all shadow-[0_0_10px_rgba(14,165,233,0.1)] group cursor-pointer">
                 
-                {/* El ícono azul visible */}
                 <User className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 
-                {/* El botón de Clerk invisible por encima */}
                 <div className="absolute inset-0 z-10 opacity-0">
                   <UserButton 
                     afterSignOutUrl="/" 
@@ -332,16 +294,8 @@ export default function LandingPage() {
                       }
                     }}
                   >
-                    {/* BOTÓN RÁPIDO: DESCARGAR */}
-                    <UserButton.MenuItems>
-                      <UserButton.Action 
-                        label="Descargar eVidensTalk" 
-                        labelIcon={<Download className="w-4 h-4" />} 
-                        onClick={() => setIsModalOpen(true)} 
-                      />
-                    </UserButton.MenuItems>
+                    {/* BOTÓN DE DESCARGA GLOBAL ELIMINADO SEGÚN REQUERIMIENTO */}
 
-                    {/* --- NUEVA PESTAÑA: MI LICENCIA --- */}
                     <UserButton.UserProfilePage 
                       label="Mi Licencia" 
                       url="licencia" 
@@ -350,7 +304,6 @@ export default function LandingPage() {
                       <LicenseTab licencia={licencia} />
                     </UserButton.UserProfilePage>
                     
-                    {/* PANEL: SUSCRIPCIÓN Y PLAN */}
                   <UserButton.UserProfilePage 
                     label="Suscripción y Plan" 
                     url="suscripcion" 
@@ -359,9 +312,7 @@ export default function LandingPage() {
                     <div className="p-8 font-sans">
                       <h2 className="text-2xl font-bold text-white mb-6">Gestión de Suscripción</h2>
                       
-                      {/* CAJA DE PLAN ACTUAL ESTILO DARK MODE */}
                       <div className="bg-[#0f172a] border border-white/10 rounded-2xl p-6 mb-8 shadow-lg relative overflow-hidden">
-                        {/* Brillo de fondo sutil */}
                         <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/5 blur-2xl rounded-full pointer-events-none"></div>
                         
                         <p className="text-sm font-semibold text-sky-100/50 mb-2">Plan Actual</p>
@@ -384,7 +335,6 @@ export default function LandingPage() {
                         </p>
                       </div>
 
-                      {/* CANJEAR CÓDIGO PROMOCIONAL */}
                       <div className="mb-8 bg-[#070b14]/50 border border-white/5 rounded-xl p-5 relative group hover:border-white/10 transition-colors">
                         <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-amber-500 to-transparent rounded-l-xl opacity-50"></div>
                         
@@ -410,7 +360,6 @@ export default function LandingPage() {
                           </button>
                         </div>
                         
-                        {/* Mensaje de respuesta del canje */}
                         {redeemMessage && (
                           <motion.p 
                             initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
@@ -421,7 +370,6 @@ export default function LandingPage() {
                         )}
                       </div>
 
-                      {/* OPCIONES DE LA CUENTA MEJORADO */}
                       <div className="mb-8">
                         <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                           <ShieldCheck className="w-5 h-5 text-sky-400" />
@@ -437,7 +385,6 @@ export default function LandingPage() {
                         </div>
                       </div>
                       
-                      {/* BOTONES MEJORADOS */}
                       <div className="flex flex-col sm:flex-row gap-4">
                         <a 
                           href="https://wa.me/5491100000000?text=Hola,%20quiero%20mejorar%20mi%20plan%20de%20eVidensTalk%20a%20Pericial" 
@@ -465,7 +412,7 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* --- HERO SECTION --- */}
+      {/* --- HERO SECTION Y RESTO DEL SITIO SE MANTIENEN IGUAL... --- */}
       <section className="relative pt-40 pb-20 overflow-hidden flex flex-col items-center text-center px-4">
         <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-sky-500/[0.08] rounded-full blur-[100px] pointer-events-none" />
         
@@ -506,8 +453,8 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* --- CÓMO FUNCIONA --- */}
       <section id="how-it-works" className="py-24 border-t border-white/5 bg-[#0b1325] relative overflow-hidden">
+        {/* ... (Todo el contenido de how-it-works se mantiene intacto) ... */}
         <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[500px] h-[500px] bg-sky-500/[0.03] rounded-full blur-[120px] pointer-events-none" />
 
         <div className="max-w-6xl mx-auto px-4 relative z-10">
@@ -522,7 +469,6 @@ export default function LandingPage() {
           </div>
 
           <div className="space-y-24">
-            {/* PASO 1 */}
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={staggerContainer} 
               className="flex flex-col md:flex-row items-center gap-12"
             >
@@ -547,7 +493,6 @@ export default function LandingPage() {
               </motion.div>
             </motion.div>
 
-            {/* PASO 2 */}
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={staggerContainer} 
               className="flex flex-col md:flex-row-reverse items-center gap-12"
             >
@@ -572,7 +517,6 @@ export default function LandingPage() {
               </motion.div>
             </motion.div>
 
-            {/* PASO 3 */}
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={staggerContainer} 
               className="flex flex-col md:flex-row items-center gap-12"
             >
@@ -596,12 +540,10 @@ export default function LandingPage() {
                 </div>
               </motion.div>
             </motion.div>
-
           </div>
         </div>
       </section>
 
-      {/* --- BENEFICIOS TÉCNICOS --- */}
       <section id="features" className="py-24 border-t border-white/5 bg-[#070b14]">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-16">
@@ -636,7 +578,6 @@ export default function LandingPage() {
             <h2 className="text-4xl font-bold text-white mb-4">Planes y Licencias</h2>
             <p className="text-sky-100/60 text-lg mb-8">Diseñado para adaptarse a las necesidades de cada investigación.</p>
             
-            {/* --- SELECTOR DE MENSUAL / ANUAL --- */}
             <div className="inline-flex bg-[#0f172a] border border-white/10 p-1.5 rounded-2xl relative z-20 shadow-lg mt-8">
               <button 
                 onClick={() => setCicloFacturacion('mensual')}
@@ -686,9 +627,27 @@ export default function LandingPage() {
                   </SignInButton>
                 </SignedOut>
                 <SignedIn>
-                  <button disabled className="w-full py-3 rounded-xl border border-white/5 bg-white/5 text-white/50 font-medium cursor-not-allowed">
-                    Plan Actual
-                  </button>
+                  {/* LÓGICA DINÁMICA DE BOTÓN COMUNIDAD */}
+                  {planActual === 'comunidad' ? (
+                    <button 
+                      onClick={handleDirectDownload}
+                      className="w-full py-3 rounded-xl bg-white/10 border border-white/20 text-white font-bold hover:bg-white/20 transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2"
+                    >
+                      <Download className="w-5 h-5" /> Descargar eVidensTalk
+                    </button>
+                  ) : (planActual === 'pericial' || planActual === 'institucional' || isAdmin) ? (
+                    <button 
+                      onClick={() => alert("Para bajar de plan o cancelar, gestiona tu facturación desde las opciones de tu cuenta.")}
+                      className="group w-full py-3 rounded-xl border border-white/5 bg-white/5 transition-all hover:bg-red-500 hover:border-red-500 hover:shadow-[0_0_20px_rgba(239,68,68,0.4)] text-center relative overflow-hidden"
+                    >
+                      <span className="block group-hover:hidden text-white/50 font-medium transition-opacity">Plan Básico</span>
+                      <span className="hidden group-hover:block text-white font-bold transition-opacity">Bajar plan de licencia</span>
+                    </button>
+                  ) : (
+                    <button disabled className="w-full py-3 rounded-xl border border-white/5 bg-white/5 text-white/50 font-medium cursor-not-allowed">
+                      Cargando estado...
+                    </button>
+                  )}
                 </SignedIn>
               </div>
             </div>
@@ -703,7 +662,6 @@ export default function LandingPage() {
               </h3>
               <p className="text-sky-100/50 mb-6 text-sm min-h-[48px]">Rigor técnico y validez legal para presentaciones judiciales.</p>
               
-              {/* --- PRECIO DINÁMICO PERICIAL (DISEÑO REPLICADO) --- */}
               <div className="h-[60px] flex flex-col justify-center mb-8 relative">
                 {descuentoPericial > 0 ? (
                   <>
@@ -735,22 +693,39 @@ export default function LandingPage() {
               </ul>
               
               <div className="mt-auto pt-4">
-                <button 
-                  onClick={() => handleCheckout("pericial")} 
-                  disabled={isCheckingOut}
-                  className="w-full py-3 rounded-xl bg-sky-500 text-white font-bold hover:bg-sky-400 transition-colors shadow-[0_0_20px_rgba(14,165,233,0.3)] mt-auto text-center flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {!userId ? (
-                    "Iniciá sesión para comprar"
-                  ) : isCheckingOut ? (
-                    <span className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Generando link seguro...
-                    </span>
-                  ) : (
-                    "Obtener Licencia"
-                  )}
-                </button>
+                {/* LÓGICA DINÁMICA DE BOTÓN PERICIAL */}
+                {!userId ? (
+                  <button onClick={() => handleCheckout("pericial")} disabled={isCheckingOut} className="w-full py-3 rounded-xl bg-sky-500 text-white font-bold hover:bg-sky-400 transition-colors shadow-[0_0_20px_rgba(14,165,233,0.3)] mt-auto text-center flex justify-center items-center">
+                    Iniciá sesión para comprar
+                  </button>
+                ) : (planActual === 'pericial' || isAdmin) ? (
+                  <button onClick={handleDirectDownload} className="w-full py-3 rounded-xl bg-sky-500 text-white font-bold hover:bg-sky-400 transition-all shadow-[0_0_20px_rgba(14,165,233,0.4)] flex items-center justify-center gap-2">
+                    <Download className="w-5 h-5" /> Descargar eVidensTalk
+                  </button>
+                ) : (planActual === 'institucional') ? (
+                  <button 
+                    onClick={() => alert("Para bajar de plan o cancelar, gestiona tu facturación desde las opciones de tu cuenta.")}
+                    className="group w-full py-3 rounded-xl border border-sky-500/30 bg-sky-500/10 transition-all hover:bg-red-500 hover:border-red-500 hover:shadow-[0_0_20px_rgba(239,68,68,0.4)] text-center relative overflow-hidden"
+                  >
+                    <span className="block group-hover:hidden text-sky-400/60 font-medium transition-opacity">Plan Inferior</span>
+                    <span className="hidden group-hover:block text-white font-bold transition-opacity">Bajar plan de licencia</span>
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => handleCheckout("pericial")} 
+                    disabled={isCheckingOut}
+                    className="w-full py-3 rounded-xl bg-sky-500 text-white font-bold hover:bg-sky-400 transition-colors shadow-[0_0_20px_rgba(14,165,233,0.3)] mt-auto text-center flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isCheckingOut ? (
+                      <span className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Generando link...
+                      </span>
+                    ) : (
+                      "Obtener Licencia"
+                    )}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -762,7 +737,6 @@ export default function LandingPage() {
               </h3>
               <p className="text-sky-100/50 mb-6 text-sm min-h-[48px]">Para estudios jurídicos, agencias y fuerzas de seguridad.</p>
               
-              {/* --- PRECIO DINÁMICO INSTITUCIONAL (DISEÑO REPLICADO) --- */}
               <div className="h-[60px] flex flex-col justify-center mb-8 relative">
                 {descuentoInstitucional > 0 ? (
                   <>
@@ -793,27 +767,31 @@ export default function LandingPage() {
                 <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight">Canal de soporte VIP directo</span></li>
               </ul>
               
-              <button 
-                onClick={() => handleCheckout("institucional")}
-                disabled={isCheckingOut}
-                className="w-full py-3 rounded-xl border border-indigo-500/50 text-indigo-300 font-medium hover:bg-indigo-500/10 transition-colors block text-center disabled:opacity-50"
-              >
-                {!userId ? (
-                  "Iniciá sesión para contratar"
-                ) : isCheckingOut ? (
-                  "Procesando..."
-                ) : (
-                  "Contratar Plan Institucional"
-                )}
-              </button>
+              {/* LÓGICA DINÁMICA DE BOTÓN INSTITUCIONAL */}
+              {!userId ? (
+                <button onClick={() => handleCheckout("institucional")} disabled={isCheckingOut} className="w-full py-3 rounded-xl border border-indigo-500/50 text-indigo-300 font-medium hover:bg-indigo-500/10 transition-colors block text-center disabled:opacity-50">
+                  Iniciá sesión para contratar
+                </button>
+              ) : (planActual === 'institucional' || isAdmin) ? (
+                <button onClick={handleDirectDownload} className="w-full py-3 rounded-xl bg-indigo-500 text-white font-bold hover:bg-indigo-400 transition-all shadow-[0_0_20px_rgba(99,102,241,0.4)] flex items-center justify-center gap-2">
+                  <Download className="w-5 h-5" /> Descargar eVidensTalk
+                </button>
+              ) : (
+                <button 
+                  onClick={() => handleCheckout("institucional")}
+                  disabled={isCheckingOut}
+                  className="w-full py-3 rounded-xl border border-indigo-500/50 text-indigo-300 font-bold hover:bg-indigo-500/10 transition-colors block text-center disabled:opacity-50"
+                >
+                  {isCheckingOut ? "Procesando..." : "Contratar Plan Institucional"}
+                </button>
+              )}
             </div>
 
           </div>
         </div>
       </section>
 
-
-      {/* --- PREGUNTAS FRECUENTES (FAQ) --- */}
+      {/* --- PREGUNTAS FRECUENTES Y FOOTER SE MANTIENEN IGUAL... --- */}
       <section id="faq" className="py-24 border-t border-white/5 bg-[#0b1325]">
         <div className="max-w-4xl mx-auto px-4">
           <div className="text-center mb-16">
@@ -849,7 +827,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* --- SECCIÓN DE SOPORTE --- */}
       <section id="soporte" className="py-24 border-t border-white/5 bg-[#070b14] relative overflow-hidden">
         <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-sky-500/30 bg-sky-500/10 text-xs font-bold text-sky-400 mb-6 uppercase tracking-widest">
@@ -861,8 +838,6 @@ export default function LandingPage() {
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
-            {/* BOTÓN 1: SOPORTE GENERAL */}
             <a href="mailto:evidenstalk@gmail.com?subject=Solicitud%20de%20Soporte%20Técnico%20-%20eVidensTalk&body=Hola%20equipo%20de%20eVidensTalk,%0A%0AMi%20nombre%20es:%20%0AInstitución/Estudio:%20%0A%0AMi%20consulta%20es%20la%20siguiente:%0A" 
                className="flex flex-col items-center p-8 rounded-2xl bg-[#0f172a] border border-white/5 hover:border-sky-500/40 transition-all group">
               <div className="w-12 h-12 bg-sky-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -872,7 +847,6 @@ export default function LandingPage() {
               <p className="text-sky-100/50 text-sm">Consultas generales sobre el software</p>
             </a>
 
-            {/* BOTÓN 2: REPORTAR BUG */}
             <a href="mailto:evidenstalk@gmail.com?subject=Reporte%20de%20Fallo/Bug%20-%20eVidensTalk&body=Hola,%20he%20encontrado%20un%20error%20en%20el%20programa.%0A%0ADescripción%20del%20problema:%0A%0APasos%20para%20reproducirlo:%0A%0AVersión%20de%20Windows:%0A" 
                className="flex flex-col items-center p-8 rounded-2xl bg-[#0f172a] border border-white/5 hover:border-red-500/40 transition-all group">
               <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -881,13 +855,10 @@ export default function LandingPage() {
               <h3 className="text-white font-bold mb-1">Reportar un Error</h3>
               <p className="text-sky-100/50 text-sm">Ayúdanos a mejorar reportando fallos</p>
             </a>
-
           </div>
         </div>
       </section>
 
-      
-      {/* --- FOOTER --- */}
       <footer className="border-t border-white/5 py-12 text-center text-sm text-sky-100/40 bg-[#070b14]">
         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
           <p>© {new Date().getFullYear()} eVidensTalk - Cyber Forensic Suite. Desarrollado por <a href="https://portafolio-joa-tech.vercel.app/" target="_blank" className="text-sky-100/60 hover:text-sky-400 transition-colors font-medium">Joa Tech</a>.</p>
@@ -899,46 +870,6 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-
-      {/* --- MODAL DE DESCARGA (Enterprise) --- */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)} className="absolute inset-0 bg-[#0b1325]/90 backdrop-blur-sm" />
-            <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md p-8 rounded-2xl bg-[#0f172a] border border-white/10 shadow-2xl"
-            >
-              <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-sky-100/50 hover:text-white transition-colors">
-                <X className="w-6 h-6" />
-              </button>
-              <h3 className="text-2xl font-bold text-white mb-2">Descargar Enterprise</h3>
-              <p className="text-sky-100/60 text-sm mb-6">Versión 1.2.0 (Windows). Ingresa tus datos para registrar la licencia.</p>
-              
-              <form onSubmit={handleDownloadSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-sky-100/80 mb-1">Nombre completo</label>
-                  <input type="text" required placeholder="Ej: Dr. Juan Pérez" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full bg-[#070b14] border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-sky-100/30 focus:outline-none focus:border-sky-500 transition-colors" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-sky-100/80 mb-1">Correo electrónico profesional</label>
-                  <input type="email" required placeholder="tu@estudio.com" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full bg-[#070b14] border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-sky-100/30 focus:outline-none focus:border-sky-500 transition-colors" />
-                </div>
-                <button type="submit" disabled={submitStatus !== 'idle'}
-                  className={`w-full py-3 rounded-lg font-bold text-white transition-all duration-300 flex items-center justify-center gap-2 mt-4
-                    ${submitStatus === 'idle' ? 'bg-sky-500 hover:bg-sky-400 shadow-[0_0_15px_rgba(14,165,233,0.3)]' : ''}
-                    ${submitStatus === 'loading' ? 'bg-sky-500/50 cursor-not-allowed' : ''}
-                    ${submitStatus === 'success' ? 'bg-emerald-500' : ''} `}>
-                  {submitStatus === 'idle' && 'Iniciar Descarga'}
-                  {submitStatus === 'loading' && 'Procesando...'}
-                  {submitStatus === 'success' && <><CheckCircle2 className="w-5 h-5" /> ¡Descarga Iniciada!</>}
-                </button>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
