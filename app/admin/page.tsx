@@ -101,31 +101,36 @@ export default function AdminDashboard() {
     }
   };
 
-  // --- NUEVA FUNCIÓN: Cambiar el plan manualmente ---
-  const cambiarPlanUsuario = async (userId: string, nuevoPlan: string) => {
+  // --- FUNCIÓN MODIFICADA: Llamada segura a la API ---
+  const cambiarPlanUsuario = async (userId: string, userEmail: string, nuevoPlan: string) => {
     setUpdatingUser(userId); // Mostramos "Actualizando..."
     
-    // Le sumamos 1 año por defecto si lo pasamos a un plan pago
-    const unAnioDesdeHoy = new Date();
-    unAnioDesdeHoy.setFullYear(unAnioDesdeHoy.getFullYear() + 1);
-    
-    const datosActualizar = nuevoPlan === 'comunidad' 
-      ? { plan_actual: nuevoPlan, fecha_vencimiento: null } 
-      : { plan_actual: nuevoPlan, fecha_vencimiento: unAnioDesdeHoy.toISOString() };
+    try {
+      const res = await fetch('/api/admin/cambiar-plan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          targetUserId: userId,
+          targetUserEmail: userEmail,
+          nuevoPlan: nuevoPlan
+        }),
+      });
 
-    const { error } = await supabase
-      .from("perfiles")
-      .update(datosActualizar)
-      .eq("id", userId);
+      const data = await res.json();
 
-    if (!error) {
-      await cargarDatos(); // Recargamos las tablas para que el usuario salte de categoría
-    } else {
+      if (res.ok) {
+        await cargarDatos(); // Recargamos las tablas para que el usuario salte de categoría
+      } else {
+        alert("❌ Error: " + data.error);
+      }
+    } catch (error) {
       console.error("Error al cambiar plan:", error);
       alert("Hubo un error al intentar cambiar el plan.");
+    } finally {
+      setUpdatingUser(null); // Ocultamos "Actualizando..."
     }
-    
-    setUpdatingUser(null); // Ocultamos "Actualizando..."
   };
 
   if (!isLoaded) return (
@@ -334,7 +339,7 @@ function UserTable({
   colorPill: string, 
   usuarios: any[], 
   mensajeVacio: string,
-  onCambiarPlan: (id: string, plan: string) => void,
+  onCambiarPlan: (id: string, email: string, plan: string) => void,
   updatingUser: string | null
 }) {
   return (
@@ -364,9 +369,10 @@ function UserTable({
                     </span>
                   ) : (
                     <div className="relative inline-block group">
+                      {/* MODIFICADO: Ahora pasamos usr.email a la función */}
                       <select
                         value={usr.plan_actual || 'comunidad'}
-                        onChange={(e) => onCambiarPlan(usr.id, e.target.value)}
+                        onChange={(e) => onCambiarPlan(usr.id, usr.email, e.target.value)}
                         className={`appearance-none bg-transparent outline-none cursor-pointer text-center px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border transition-all hover:brightness-125 focus:ring-2 focus:ring-white/20 ${colorPill}`}
                         title="Haz clic para cambiar el plan"
                       >
