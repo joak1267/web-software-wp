@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth, SignInButton, SignedIn, SignedOut, UserButton, useUser } from "@clerk/nextjs";
 import emailjs from '@emailjs/browser';
+import toast, { Toaster } from 'react-hot-toast';
 import { createClient } from "@supabase/supabase-js";
 import { 
   Bug,
@@ -52,6 +53,8 @@ export default function LandingPage() {
   
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
+  const [flujoActivo, setFlujoActivo] = useState<'comunidad' | 'pericial' | 'institucional'>('pericial');
+
   // --- ESTADOS: CANJE Y LECTURA DE PLAN ---
   const [planActual, setPlanActual] = useState("cargando...");
   const [promoCode, setPromoCode] = useState("");
@@ -90,6 +93,7 @@ export default function LandingPage() {
         const email = user.primaryEmailAddress?.emailAddress;
         if (!email) return;
 
+        // El frontend AHORA SOLO LEE de la base de datos
         const { data: userData } = await supabase
           .from('users')
           .select('password, plan')
@@ -103,80 +107,125 @@ export default function LandingPage() {
           setLicencia("LICENCIA-NO-ENCONTRADA");
           setPlanActual("comunidad");
         }
-
-        await supabase
-          .from('perfiles')
-          .upsert({ id: user.id, email: email, plan_actual: userData?.plan || 'comunidad' }, { onConflict: 'id' });
+        
+        // ¡Listo! Ya no hay 'upsert' aquí. El Webhook de Clerk se encarga de crearlo.
       };
       
       sincronizarUsuario();
     }
   }, [user]);
 
-  // --- LÓGICA DE CANJEO DE CÓDIGO PROMOCIONAL ---
+  // --- LÓGICA DE CANJEO DE CÓDIGO PROMOCIONAL (SEGURA VÍA API) ---
   const handleRedeemCode = async () => {
     if (!promoCode.trim()) return;
     setRedeemStatus('loading');
     setRedeemMessage("");
 
     try {
-      const { data: codeData, error: codeError } = await supabase
-        .from('codigos_promocionales')
-        .select('*')
-        .eq('codigo', promoCode.trim().toUpperCase())
-        .eq('usado', false)
-        .single();
+      const res = await fetch('/api/canjear-codigo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          promoCode: promoCode,
+          userEmail: user?.primaryEmailAddress?.emailAddress
+        })
+      });
 
-      if (codeError || !codeData) {
-        setRedeemStatus('error');
-        setRedeemMessage("Código inválido, expirado o ya utilizado.");
-        return;
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Error desconocido al canjear el código.");
       }
 
-      const { error: updateCodeError } = await supabase
-        .from('codigos_promocionales')
-        .update({ 
-          usado: true, 
-          usado_por: user?.id,
-          fecha_uso: new Date().toISOString()
-        })
-        .eq('id', codeData.id);
-
-      if (updateCodeError) throw updateCodeError;
-
-      const unAnioDesdeHoy = new Date();
-      unAnioDesdeHoy.setFullYear(unAnioDesdeHoy.getFullYear() + 1);
-
-      const { error: updateUserError } = await supabase
-        .from('perfiles')
-        .update({ 
-          plan_actual: codeData.plan_otorgado,
-          fecha_vencimiento: unAnioDesdeHoy.toISOString()
-        })
-        .eq('id', user?.id);
-
-      if (updateUserError) throw updateUserError;
-
-      await supabase
-        .from('users')
-        .update({ plan: codeData.plan_otorgado })
-        .eq('email', user?.primaryEmailAddress?.emailAddress);
-
+      // Si todo sale bien, actualizamos la interfaz
       setRedeemStatus('success');
-      setRedeemMessage(`¡Felicidades! Se ha activado tu Plan ${codeData.plan_otorgado.toUpperCase()} por 1 año.`);
-      setPlanActual(codeData.plan_otorgado); 
+      setRedeemMessage(data.message);
+      setPlanActual(data.plan); 
       setPromoCode(""); 
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error canjeando código:", error);
       setRedeemStatus('error');
-      setRedeemMessage("Hubo un error de conexión. Intenta de nuevo.");
+      setRedeemMessage(error.message);
+    }
+  };
+
+  // --- DATOS DEL FLUJO (CARRUSEL) ---
+  const DATOS_FLUJO = {
+    comunidad: {
+      tema: { texto: "text-slate-400", bg: "bg-slate-500/10", borde: "border-slate-500/30", gradiente: "from-slate-500/5", color: "slate" },
+      pasos: [
+        { 
+          titulo: "Carga Básica", 
+          desc: "Sube tu exportación de WhatsApp en formato .txt (hasta 15k mensajes). El sistema estructurará el chat para su lectura.", 
+          icono: <Download className="w-8 h-8" />,
+          imgText: "[Imagen: Carga básica de .txt]"
+        },
+        { 
+          titulo: "Búsqueda Simple", 
+          desc: "Utiliza el buscador integrado para encontrar palabras clave dentro de la conversación sin indexación profunda.", 
+          icono: <Search className="w-8 h-8" />,
+          imgText: "[Imagen: Buscador estándar]"
+        },
+        { 
+          titulo: "PDF con Marca de Agua", 
+          desc: "Genera un reporte básico en PDF para revisión personal, incluyendo una marca de agua de la versión de la comunidad.", 
+          icono: <FileText className="w-8 h-8" />,
+          imgText: "[Imagen: PDF Básico]"
+        }
+      ]
+    },
+    pericial: {
+      tema: { texto: "text-sky-400", bg: "bg-sky-500/10", borde: "border-sky-500/30", gradiente: "from-sky-500/5", color: "sky" },
+      pasos: [
+        { 
+          titulo: "Exporta y Carga el Chat", 
+          desc: "Solicita la exportación del chat de WhatsApp directamente desde el dispositivo móvil (formato .txt o .zip). Arrastra el archivo a eVidensTalk y el sistema lo estructurará automáticamente de forma cronológica, separando emisores y receptores.", 
+          icono: <Download className="w-8 h-8" />,
+          imgText: "[Imagen: Pantalla de carga masiva]"
+        },
+        { 
+          titulo: "Audita y Etiqueta", 
+          desc: "Utiliza el motor de búsqueda global para encontrar palabras clave al instante. Escucha notas de voz integradas, transcribe audios largos y marca mensajes específicos con la etiqueta Evidencia para incluirlos en el reporte final.", 
+          icono: <Search className="w-8 h-8" />,
+          imgText: "[Imagen: Interfaz de etiquetado pericial]"
+        },
+        { 
+          titulo: "Genera el Reporte Forense", 
+          desc: "Exporta un documento PDF impecable listo para el juzgado. El reporte incluye automáticamente la fecha, hora, metadatos del archivo original y las firmas Hash (MD5/SHA256) para garantizar la inalterabilidad de la evidencia.", 
+          icono: <FileText className="w-8 h-8" />,
+          imgText: "[Imagen: PDF Forense con Hashes]"
+        }
+      ]
+    },
+    institucional: {
+      tema: { texto: "text-indigo-400", bg: "bg-indigo-500/10", borde: "border-indigo-500/30", gradiente: "from-indigo-500/5", color: "indigo" },
+      pasos: [
+        { 
+          titulo: "Ingesta Multi-Dispositivo", 
+          desc: "Procesa extracciones de múltiples fuentes y agentes simultáneos, ideal para investigaciones complejas en fuerzas de seguridad o grandes estudios.", 
+          icono: <Briefcase className="w-8 h-8" />,
+          imgText: "[Imagen: Dashboard Multi-Agente]"
+        },
+        { 
+          titulo: "Colaboración y Auditoría", 
+          desc: "Etiquetado avanzado y categorización para equipos de trabajo. Mantén un registro de auditoría de quién revisó cada porción de la evidencia.", 
+          icono: <ShieldCheck className="w-8 h-8" />,
+          imgText: "[Imagen: Log de Auditoría]"
+        },
+        { 
+          titulo: "Reporte Marca Blanca", 
+          desc: "Genera el PDF forense final con el logo, membrete y formato oficial de tu institución, manteniendo las garantías de firmas Hash.", 
+          icono: <FileText className="w-8 h-8" />,
+          imgText: "[Imagen: PDF Institucional Personalizado]"
+        }
+      ]
     }
   };
 
   const handleCheckout = async (planName: string) => {
     if (!userId) {
-      alert("Para adquirir una licencia, primero debes iniciar sesión.");
+      toast.error("Para adquirir una licencia, primero debes iniciar sesión.");
       return;
     }
 
@@ -197,11 +246,11 @@ export default function LandingPage() {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert("Hubo un error generando el link de pago.");
+        toast.error("Hubo un error generando el link de pago.");
       }
     } catch (error) {
       console.error(error);
-      alert("Hubo un error de conexión.");
+      toast.error("Hubo un error de conexión con el servidor.");
     } finally {
       setIsCheckingOut(false);
     }
@@ -209,6 +258,7 @@ export default function LandingPage() {
 
   // --- LÓGICA DE CANCELACIÓN DE SUSCRIPCIÓN ---
   const handleCancelSubscription = async () => {
+    // Mantenemos el confirm nativo para la advertencia crítica, es buena práctica
     const confirmar = window.confirm("¿Estás seguro de que deseas cancelar tu suscripción? Podrás seguir usando eVidensTalk hasta el final de tu ciclo de facturación actual.");
     
     if (!confirmar) return;
@@ -219,33 +269,29 @@ export default function LandingPage() {
       const data = await res.json();
 
       if (res.ok) {
-        alert("✅ " + data.message);
-        window.location.reload();
+        toast.success(data.message);
+        // Esperamos 2 segundos para que el usuario lea el Toast antes de recargar la página
+        setTimeout(() => window.location.reload(), 2000);
       } else {
-        alert("❌ Error: " + data.error);
+        toast.error(data.error || "No se pudo cancelar la suscripción.");
       }
     } catch (error) {
       console.error(error);
-      alert("Error de conexión al intentar cancelar.");
+      toast.error("Error de conexión al intentar cancelar.");
     } finally {
       setIsCancelling(false);
     }
   };
 
   // --- NUEVA LÓGICA DE DESCARGA DIRECTA ---
-  const handleDirectDownload = () => {
-    try {
-      const link = document.createElement('a');
-      link.href = 'https://github.com/joak1267/evidenstalk-enterprise/releases/download/v1.2.0/eVidensTalk.Enterprise.Setup.1.2.0.exe';
-      link.download = ''; 
-      document.body.appendChild(link); 
-      link.click(); 
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error("Error al descargar:", error); 
-      alert("Hubo un problema con la descarga. Por favor, intenta de nuevo."); 
-    }
-  };
+// --- NUEVA LÓGICA DE DESCARGA DIRECTA (DINÁMICA) ---
+const handleDirectDownload = () => {
+  toast.success("Iniciando descarga de la última versión...");
+  
+  // Esto redirige silenciosamente a nuestra nueva API.
+  // La API buscará el último .exe en GitHub y comenzará la descarga sola.
+  window.location.href = '/api/descargar';
+};
 
   const calcularPrecioFinal = (precioBase: number, descuento: number) => {
     if (descuento > 0) {
@@ -256,6 +302,21 @@ export default function LandingPage() {
 
   return (
     <div className="relative min-h-screen bg-[#0b1325] selection:bg-sky-500/30 font-sans">
+      
+      {/* --- NOTIFICACIONES TOAST --- */}
+      <Toaster 
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: '#0f172a',
+            color: '#fff',
+            border: '1px solid rgba(14, 165, 233, 0.2)', // Borde sutil celeste
+          },
+          success: { iconTheme: { primary: '#10b981', secondary: '#fff' } },
+          error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+        }}
+      />
+
       
      {/* --- NAVBAR --- */}
       <nav className="fixed top-0 w-full glass-panel z-50 border-b-0 border-white/5 bg-[#0b1325]/80 backdrop-blur-md h-16">
@@ -272,12 +333,13 @@ export default function LandingPage() {
             </span>
           </div>
 
-          <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-8 text-sm font-medium text-neutral-400">
+          <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-6 text-sm font-medium text-neutral-400">
             <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-sky-400 transition-colors">
               Inicio
             </button>
             <a href="#features" className="hover:text-sky-400 transition-colors">Características</a>
             <a href="#planes" className="hover:text-sky-400 transition-colors">Planes</a>
+            <a href="#soporte" className="hover:text-sky-400 transition-colors">Contacto</a>
           </div>
 
           <div className="flex items-center gap-4">
@@ -503,88 +565,85 @@ export default function LandingPage() {
         <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[500px] h-[500px] bg-sky-500/[0.03] rounded-full blur-[120px] pointer-events-none" />
 
         <div className="max-w-6xl mx-auto px-4 relative z-10">
-          <div className="text-center mb-20">
+          <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-sky-500/30 bg-sky-500/10 text-xs font-bold text-sky-400 mb-6 uppercase tracking-widest">
               Flujo de Trabajo
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Evidencia lista en 3 pasos</h2>
-            <p className="text-sky-100/60 max-w-2xl mx-auto">
-              Procesa exportaciones de WhatsApp de forma 100% local. Sin subir datos a la nube, garantizando la privacidad absoluta.
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">Evidencia lista en 3 pasos</h2>
+            
+            {/* SELECTOR ANIMADO DE FLUJO */}
+            <div className="flex flex-wrap justify-center gap-2 md:gap-4 bg-[#0f172a]/80 p-2 rounded-2xl border border-white/10 inline-flex backdrop-blur-sm shadow-xl relative z-20">
+              <button 
+                onClick={() => setFlujoActivo('comunidad')}
+                className={`relative px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${flujoActivo === 'comunidad' ? 'text-slate-200 shadow-md' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                {flujoActivo === 'comunidad' && <motion.div layoutId="flujo-bg" className="absolute inset-0 bg-slate-600/30 border border-slate-500/50 rounded-xl -z-10" />}
+                Comunidad
+              </button>
+              <button 
+                onClick={() => setFlujoActivo('pericial')}
+                className={`relative px-8 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${flujoActivo === 'pericial' ? 'text-sky-300 shadow-[0_0_15px_rgba(14,165,233,0.3)]' : 'text-sky-600 hover:text-sky-400'}`}
+              >
+                {flujoActivo === 'pericial' && <motion.div layoutId="flujo-bg" className="absolute inset-0 bg-sky-500/20 border border-sky-500/50 rounded-xl -z-10" />}
+                Pericial
+              </button>
+              <button 
+                onClick={() => setFlujoActivo('institucional')}
+                className={`relative px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${flujoActivo === 'institucional' ? 'text-indigo-300 shadow-md' : 'text-indigo-600 hover:text-indigo-400'}`}
+              >
+                {flujoActivo === 'institucional' && <motion.div layoutId="flujo-bg" className="absolute inset-0 bg-indigo-500/20 border border-indigo-500/50 rounded-xl -z-10" />}
+                Institucional
+              </button>
+            </div>
+            
+            <p className="text-sky-100/60 max-w-2xl mx-auto mt-8 h-12">
+              {flujoActivo === 'comunidad' && "Flujo simplificado para usuarios básicos y revisiones menores."}
+              {flujoActivo === 'pericial' && "Procesa exportaciones de WhatsApp de forma 100% local garantizando la privacidad absoluta."}
+              {flujoActivo === 'institucional' && "Flujo escalable para equipos de trabajo, peritajes masivos y auditorías."}
             </p>
           </div>
 
-          <div className="space-y-24">
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={staggerContainer} 
-              className="flex flex-col md:flex-row items-center gap-12"
-            >
-              <motion.div variants={fadeUp} className="flex-1 space-y-6">
-                <div className="w-12 h-12 rounded-full bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 font-bold text-xl">
-                  1
-                </div>
-                <h3 className="text-2xl font-bold text-white">Exporta y Carga el Chat</h3>
-                <p className="text-sky-100/60 leading-relaxed">
-                  Solicita la exportación del chat de WhatsApp directamente desde el dispositivo móvil (formato .txt o .zip). Arrastra el archivo a eVidensTalk y el sistema lo estructurará automáticamente de forma cronológica, separando emisores y receptores.
-                </p>
+          <div className="relative min-h-[600px]">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={flujoActivo}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="space-y-24"
+              >
+                {DATOS_FLUJO[flujoActivo].pasos.map((paso, index) => {
+                  const isReverse = index % 2 !== 0;
+                  const tema = DATOS_FLUJO[flujoActivo].tema;
+                  
+                  return (
+                    <div key={index} className={`flex flex-col md:flex-row ${isReverse ? 'md:flex-row-reverse' : ''} items-center gap-12`}>
+                      <div className="flex-1 space-y-6">
+                        <div className={`w-12 h-12 rounded-full ${tema.bg} border ${tema.borde} flex items-center justify-center ${tema.texto} font-bold text-xl shadow-lg`}>
+                          {index + 1}
+                        </div>
+                        <h3 className="text-2xl font-bold text-white">{paso.titulo}</h3>
+                        <p className="text-sky-100/60 leading-relaxed">
+                          {paso.desc}
+                        </p>
+                      </div>
+                      
+                      <div className="flex-1 w-full">
+                        <div className="aspect-video rounded-xl bg-[#0f172a] border border-white/10 shadow-2xl overflow-hidden relative group hover:border-white/20 transition-colors">
+                          <div className={`absolute inset-0 bg-gradient-to-br ${tema.gradiente} to-transparent flex items-center justify-center`}>
+                            <span className={`${tema.texto} font-medium flex flex-col items-center gap-3 opacity-60 group-hover:opacity-100 transition-opacity group-hover:scale-105 duration-300`}>
+                              {paso.icono}
+                              {paso.imgText}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </motion.div>
-              <motion.div variants={fadeUp} className="flex-1 w-full">
-                <div className="aspect-video rounded-xl bg-[#0f172a] border border-white/10 shadow-2xl overflow-hidden relative group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 to-transparent flex items-center justify-center">
-                    <span className="text-sky-100/30 font-medium flex flex-col items-center gap-2">
-                      <Download className="w-8 h-8" />
-                      [Imagen: Pantalla de carga de archivos]
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={staggerContainer} 
-              className="flex flex-col md:flex-row-reverse items-center gap-12"
-            >
-              <motion.div variants={fadeUp} className="flex-1 space-y-6">
-                <div className="w-12 h-12 rounded-full bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 font-bold text-xl">
-                  2
-                </div>
-                <h3 className="text-2xl font-bold text-white">Audita y Etiqueta</h3>
-                <p className="text-sky-100/60 leading-relaxed">
-                  Utiliza el motor de búsqueda global para encontrar palabras clave al instante. Escucha notas de voz integradas, transcribe audios largos y marca mensajes específicos con la etiqueta <span className="text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/20 text-sm">Evidencia</span> para incluirlos en el reporte final.
-                </p>
-              </motion.div>
-              <motion.div variants={fadeUp} className="flex-1 w-full">
-                <div className="aspect-video rounded-xl bg-[#0f172a] border border-white/10 shadow-2xl overflow-hidden relative group">
-                  <div className="absolute inset-0 bg-gradient-to-bl from-sky-500/5 to-transparent flex items-center justify-center">
-                    <span className="text-sky-100/30 font-medium flex flex-col items-center gap-2">
-                      <Search className="w-8 h-8" />
-                      [Imagen: Interfaz de búsqueda y etiquetado]
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={staggerContainer} 
-              className="flex flex-col md:flex-row items-center gap-12"
-            >
-              <motion.div variants={fadeUp} className="flex-1 space-y-6">
-                <div className="w-12 h-12 rounded-full bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 font-bold text-xl">
-                  3
-                </div>
-                <h3 className="text-2xl font-bold text-white">Genera el Reporte Forense</h3>
-                <p className="text-sky-100/60 leading-relaxed">
-                  Exporta un documento PDF impecable listo para el juzgado. El reporte incluye automáticamente la fecha, hora, metadatos del archivo original y las firmas Hash (MD5/SHA256) para garantizar la inalterabilidad de la evidencia.
-                </p>
-              </motion.div>
-              <motion.div variants={fadeUp} className="flex-1 w-full">
-                <div className="aspect-video rounded-xl bg-[#0f172a] border border-white/10 shadow-2xl overflow-hidden relative group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 to-transparent flex items-center justify-center">
-                    <span className="text-sky-100/30 font-medium flex flex-col items-center gap-2">
-                      <FileText className="w-8 h-8" />
-                      [Imagen: Vista previa del PDF con Hash]
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       </section>

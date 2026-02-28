@@ -65,18 +65,15 @@ export async function POST(req: Request) {
 
     const nuevaLicencia = generarLicencia();
 
-    // 5. Conexión a Supabase (Recomendado: Usar Service Role Key para operaciones de servidor)
-    // Si no tienes configurada SUPABASE_SERVICE_ROLE_KEY, volverá a usar la pública (ANON_KEY), 
-    // pero te sugiero fuertemente agregar la Service Role a tu .env
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    // 5. Conexión a Supabase (Usando Service Role Key obligatoriamente para seguridad)
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      supabaseKey
-    );
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // 6. Inserción en la tabla 'users'
-    const { error } = await supabase
+    // 6. Inserción en las tablas 'users' y 'perfiles'
+    // Primero en users
+    const { error: errorUsers } = await supabase
       .from('users')
       .insert([{ 
         id: id, 
@@ -85,8 +82,22 @@ export async function POST(req: Request) {
         password: nuevaLicencia 
       }]);
 
-    if (error) {
-       console.error('Error insertando en Supabase:', error);
+    if (errorUsers) {
+       console.error('Error insertando en tabla users:', errorUsers);
+       return new Response('Error Base de Datos', { status: 500 });
+    }
+
+    // Luego en perfiles (esto reemplaza al viejo código de tu frontend)
+    const { error: errorPerfiles } = await supabase
+      .from('perfiles')
+      .insert([{ 
+        id: id, 
+        email: email, 
+        plan_actual: 'comunidad' 
+      }]);
+
+    if (errorPerfiles) {
+       console.error('Error insertando en tabla perfiles:', errorPerfiles);
        return new Response('Error Base de Datos', { status: 500 });
     }
 
