@@ -74,7 +74,7 @@ export default function LandingPage() {
   const isAdmin = user?.primaryEmailAddress?.emailAddress === "evidenstalk@gmail.com";
 
 
-  // --- ESCÁNER DE SUPABASE ACTUALIZADO ---
+  // --- ESCÁNER DE SUPABASE ACTUALIZADO (FUENTE DE LA VERDAD UNIFICADA) ---
   useEffect(() => {
     const cargarDescuentos = async () => {
       const { data } = await supabase.from('configuracion').select('*').eq('id', 1).single();
@@ -92,33 +92,21 @@ export default function LandingPage() {
 
         const { data: userData } = await supabase
           .from('users')
-          .select('password')
+          .select('password, plan')
           .eq('email', email)
           .single();
         
-        if (userData && userData.password) {
-          setLicencia(userData.password);
+        if (userData) {
+          setLicencia(userData.password || "LICENCIA-NO-ENCONTRADA");
+          setPlanActual(userData.plan || "comunidad");
         } else {
           setLicencia("LICENCIA-NO-ENCONTRADA");
+          setPlanActual("comunidad");
         }
 
-        const { error } = await supabase
+        await supabase
           .from('perfiles')
-          .upsert({ id: user.id, email: email }, { onConflict: 'id' });
-
-        if (!error) {
-          const { data } = await supabase
-            .from('perfiles')
-            .select('plan_actual')
-            .eq('id', user.id)
-            .single();
-            
-          if (data) {
-            setPlanActual(data.plan_actual);
-          }
-        } else {
-          console.error("Error guardando perfil en Supabase:", error);
-        }
+          .upsert({ id: user.id, email: email, plan_actual: userData?.plan || 'comunidad' }, { onConflict: 'id' });
       };
       
       sincronizarUsuario();
@@ -168,6 +156,11 @@ export default function LandingPage() {
         .eq('id', user?.id);
 
       if (updateUserError) throw updateUserError;
+
+      await supabase
+        .from('users')
+        .update({ plan: codeData.plan_otorgado })
+        .eq('email', user?.primaryEmailAddress?.emailAddress);
 
       setRedeemStatus('success');
       setRedeemMessage(`¡Felicidades! Se ha activado tu Plan ${codeData.plan_otorgado.toUpperCase()} por 1 año.`);
@@ -227,7 +220,6 @@ export default function LandingPage() {
 
       if (res.ok) {
         alert("✅ " + data.message);
-        // Recargamos la página para actualizar la interfaz
         window.location.reload();
       } else {
         alert("❌ Error: " + data.error);
@@ -323,8 +315,6 @@ export default function LandingPage() {
                       }
                     }}
                   >
-                    {/* BOTÓN DE DESCARGA GLOBAL ELIMINADO SEGÚN REQUERIMIENTO */}
-
                     <UserButton.UserProfilePage 
                       label="Mi Licencia" 
                       url="licencia" 
@@ -445,7 +435,7 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* --- HERO SECTION Y RESTO DEL SITIO SE MANTIENEN IGUAL... --- */}
+      {/* --- HERO SECTION Y RESTO DEL SITIO --- */}
       <section className="relative pt-40 pb-20 overflow-hidden flex flex-col items-center text-center px-4">
         <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-sky-500/[0.08] rounded-full blur-[100px] pointer-events-none" />
         
@@ -477,17 +467,39 @@ export default function LandingPage() {
           </motion.p>
           
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
+            
+            {/* 🔥 NUEVO BOTÓN DE DESCARGA PARA WINDOWS 🔥 */}
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-sky-500 text-white border border-sky-500 px-6 py-3 rounded-lg font-bold hover:bg-sky-400 transition-all shadow-[0_0_15px_rgba(14,165,233,0.3)]">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M6.555 1.375 0 2.237v5.45h6.555V1.375zM0 13.795l6.555.933V8.313H0v5.482zm7.278-5.4.026 6.378L16 16V8.395H7.278zM16 0 7.33 1.244v6.414H16V0z"/>
+                  </svg>
+                  Descargar para Windows
+                </button>
+              </SignInButton>
+            </SignedOut>
+            <SignedIn>
+              <button onClick={handleDirectDownload} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-sky-500 text-white border border-sky-500 px-6 py-3 rounded-lg font-bold hover:bg-sky-400 transition-all shadow-[0_0_15px_rgba(14,165,233,0.3)]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M6.555 1.375 0 2.237v5.45h6.555V1.375zM0 13.795l6.555.933V8.313H0v5.482zm7.278-5.4.026 6.378L16 16V8.395H7.278zM16 0 7.33 1.244v6.414H16V0z"/>
+                </svg>
+                Descargar para Windows
+              </button>
+            </SignedIn>
+
+            {/* BOTÓN DE GUÍA PERICIAL ORIGINAL */}
             <a href="/guia-procedimiento-pericial.pdf" target="_blank"
                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-sky-500/10 border border-sky-500/20 text-sky-400 px-6 py-3 rounded-lg font-medium hover:bg-sky-500/20 transition-colors">
               <FileText className="w-4 h-4" />
               Guía Pericial (PDF)
             </a>
+
           </motion.div>
         </motion.div>
       </section>
 
       <section id="how-it-works" className="py-24 border-t border-white/5 bg-[#0b1325] relative overflow-hidden">
-        {/* ... (Todo el contenido de how-it-works se mantiene intacto) ... */}
         <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[500px] h-[500px] bg-sky-500/[0.03] rounded-full blur-[120px] pointer-events-none" />
 
         <div className="max-w-6xl mx-auto px-4 relative z-10">
@@ -604,7 +616,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-     {/* --- SECCIÓN DE PLANES / PRICING --- */}
       <section id="planes" className="py-24 border-t border-white/5 bg-[#070b14] relative">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
@@ -660,7 +671,6 @@ export default function LandingPage() {
                   </SignInButton>
                 </SignedOut>
                 <SignedIn>
-                  {/* LÓGICA DINÁMICA DE BOTÓN COMUNIDAD */}
                   {planActual === 'comunidad' ? (
                     <button 
                       onClick={handleDirectDownload}
@@ -726,7 +736,6 @@ export default function LandingPage() {
               </ul>
               
               <div className="mt-auto pt-4">
-                {/* LÓGICA DINÁMICA DE BOTÓN PERICIAL */}
                 {!userId ? (
                   <button onClick={() => handleCheckout("pericial")} disabled={isCheckingOut} className="w-full py-3 rounded-xl bg-sky-500 text-white font-bold hover:bg-sky-400 transition-colors shadow-[0_0_20px_rgba(14,165,233,0.3)] mt-auto text-center flex justify-center items-center">
                     Iniciá sesión para comprar
@@ -800,7 +809,6 @@ export default function LandingPage() {
                 <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight">Canal de soporte VIP directo</span></li>
               </ul>
               
-              {/* LÓGICA DINÁMICA DE BOTÓN INSTITUCIONAL */}
               {!userId ? (
                 <button onClick={() => handleCheckout("institucional")} disabled={isCheckingOut} className="w-full py-3 rounded-xl border border-indigo-500/50 text-indigo-300 font-medium hover:bg-indigo-500/10 transition-colors block text-center disabled:opacity-50">
                   Iniciá sesión para contratar
@@ -824,7 +832,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* --- PREGUNTAS FRECUENTES Y FOOTER SE MANTIENEN IGUAL... --- */}
       <section id="faq" className="py-24 border-t border-white/5 bg-[#0b1325]">
         <div className="max-w-4xl mx-auto px-4">
           <div className="text-center mb-16">
