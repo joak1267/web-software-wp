@@ -150,28 +150,28 @@ export default function LandingPage() {
     }
   };
 
-  // --- DATOS DEL FLUJO (CARRUSEL) ---
+  // --- DATOS DEL FLUJO (CARRUSEL) OPTIMIZADOS PARA CADA PLAN ---
   const DATOS_FLUJO = {
     comunidad: {
       tema: { texto: "text-slate-400", bg: "bg-slate-500/10", borde: "border-slate-500/30", gradiente: "from-slate-500/5", color: "slate" },
       pasos: [
         { 
-          titulo: "Carga Básica", 
-          desc: "Sube tu exportación de WhatsApp en formato .txt (hasta 15k mensajes). El sistema estructurará el chat para su lectura.", 
+          titulo: "Carga y Estructuración", 
+          desc: "Importa exportaciones nativas de WhatsApp (.txt) de hasta 2.000 mensajes. El sistema procesa el texto y lo organiza cronológicamente para una lectura clara.", 
           icono: <Download className="w-8 h-8" />,
-          imgText: "[Imagen: Carga básica de .txt]"
+          imgText: "[Visor de carga básico]"
         },
         { 
-          titulo: "Búsqueda Simple", 
-          desc: "Utiliza el buscador integrado para encontrar palabras clave dentro de la conversación sin indexación profunda.", 
+          titulo: "Búsqueda Local", 
+          desc: "Utiliza el buscador integrado para localizar palabras clave dentro del expediente abierto de forma rápida y sencilla.", 
           icono: <Search className="w-8 h-8" />,
-          imgText: "[Imagen: Buscador estándar]"
+          imgText: "[Buscador de palabras clave]"
         },
         { 
-          titulo: "PDF con Marca de Agua", 
-          desc: "Genera un reporte básico en PDF para revisión personal, incluyendo una marca de agua de la versión de la comunidad.", 
+          titulo: "Reporte Estándar", 
+          desc: "Genera un documento PDF para revisión personal o periodística. Incluye una marca de agua indicativa de la versión Comunidad.", 
           icono: <FileText className="w-8 h-8" />,
-          imgText: "[Imagen: PDF Básico]"
+          imgText: "[PDF con marca de agua]"
         }
       ]
     },
@@ -179,22 +179,22 @@ export default function LandingPage() {
       tema: { texto: "text-sky-400", bg: "bg-sky-500/10", borde: "border-sky-500/30", gradiente: "from-sky-500/5", color: "sky" },
       pasos: [
         { 
-          titulo: "Exporta y Carga el Chat", 
-          desc: "Solicita la exportación del chat de WhatsApp directamente desde el dispositivo móvil (formato .txt o .zip). Arrastra el archivo a eVidensTalk y el sistema lo estructurará automáticamente de forma cronológica, separando emisores y receptores.", 
+          titulo: "Ingesta y Sello Criptográfico", 
+          desc: "Arrastra archivos .txt o .zip masivos sin límite de mensajes. El motor forense genera automáticamente un Hash SHA-256 en tiempo real, garantizando la inalterabilidad de la prueba original.", 
           icono: <Download className="w-8 h-8" />,
-          imgText: "[Imagen: Pantalla de carga masiva]"
+          imgText: "[Validación SHA-256 en vivo]"
         },
         { 
-          titulo: "Audita y Etiqueta", 
-          desc: "Utiliza el motor de búsqueda global para encontrar palabras clave al instante. Escucha notas de voz integradas, transcribe audios largos y marca mensajes específicos con la etiqueta Evidencia para incluirlos en el reporte final.", 
+          titulo: "Análisis con Inteligencia Global", 
+          desc: "Rastrea millones de mensajes en milisegundos con el motor FTS5. Marca evidencias críticas con etiquetas forenses y transcribe audios de voz a texto automáticamente mediante IA.", 
           icono: <Search className="w-8 h-8" />,
-          imgText: "[Imagen: Interfaz de etiquetado pericial]"
+          imgText: "[Motor de búsqueda global e IA]"
         },
         { 
-          titulo: "Genera el Reporte Forense", 
-          desc: "Exporta un documento PDF impecable listo para el juzgado. El reporte incluye automáticamente la fecha, hora, metadatos del archivo original y las firmas Hash (MD5/SHA256) para garantizar la inalterabilidad de la evidencia.", 
+          titulo: "Dictamen Forense PDF", 
+          desc: "Emite reportes profesionales listos para tribunales. El PDF incluye validación de Hashes, metadatos del archivo y filtros avanzados por rangos de fechas o términos específicos.", 
           icono: <FileText className="w-8 h-8" />,
-          imgText: "[Imagen: PDF Forense con Hashes]"
+          imgText: "[PDF Forense con Firma Hash]"
         }
       ]
     },
@@ -202,22 +202,22 @@ export default function LandingPage() {
       tema: { texto: "text-indigo-400", bg: "bg-indigo-500/10", borde: "border-indigo-500/30", gradiente: "from-indigo-500/5", color: "indigo" },
       pasos: [
         { 
-          titulo: "Ingesta Multi-Dispositivo", 
-          desc: "Procesa extracciones de múltiples fuentes y agentes simultáneos, ideal para investigaciones complejas en fuerzas de seguridad o grandes estudios.", 
+          titulo: "Matriz Operativa de Ingesta", 
+          desc: "Coordina la carga de evidencias desde múltiples estaciones de trabajo simultáneas. Control estricto de accesos vinculado a la firma física de hardware (HWID) de cada analista.", 
           icono: <Briefcase className="w-8 h-8" />,
-          imgText: "[Imagen: Dashboard Multi-Agente]"
+          imgText: "[Gestión de Analistas y Hardware]"
         },
         { 
-          titulo: "Colaboración y Auditoría", 
-          desc: "Etiquetado avanzado y categorización para equipos de trabajo. Mantén un registro de auditoría de quién revisó cada porción de la evidencia.", 
+          titulo: "Supervisión y Auditoría", 
+          desc: "Gestione los nodos de sus equipos de investigación en tiempo real. Mantenga la trazabilidad absoluta sobre quién revisa, etiqueta y procesa cada porción de la evidencia digital.", 
           icono: <ShieldCheck className="w-8 h-8" />,
-          imgText: "[Imagen: Log de Auditoría]"
+          imgText: "[Log de Auditoría de Nodos]"
         },
         { 
           titulo: "Reporte Marca Blanca", 
-          desc: "Genera el PDF forense final con el logo, membrete y formato oficial de tu institución, manteniendo las garantías de firmas Hash.", 
+          desc: "Exporte dictámenes finales personalizados con el nombre, logo y membrete oficial de su Institución, Fiscalía o Agencia, manteniendo el máximo estándar de rigor forense.", 
           icono: <FileText className="w-8 h-8" />,
-          imgText: "[Imagen: PDF Institucional Personalizado]"
+          imgText: "[PDF con Logo y Membrete Oficial]"
         }
       ]
     }
@@ -301,7 +301,37 @@ const handleDirectDownload = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#0b1325] selection:bg-sky-500/30 font-sans">
+    <div className="relative min-h-screen bg-[#020408] selection:bg-sky-500/30 font-sans text-slate-200">
+      
+      {/* --- 🔥 FONDO GLOBAL FIJO (EFECTO PARALLAX) 🔥 --- */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        {/* 1. La Red Cuadriculada (Difuminada suavemente) */}
+        <div className="absolute inset-0 opacity-[0.06]" 
+          style={{ 
+            backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)", 
+            backgroundSize: "50px 50px",
+            maskImage: "radial-gradient(ellipse at top, black 40%, transparent 80%)",
+            WebkitMaskImage: "radial-gradient(ellipse at top, black 40%, transparent 80%)"
+          }}>
+        </div>
+        
+        {/* 2. Los Nodos de Luz Forense */}
+        <div className="absolute inset-0">
+          <div className="absolute top-[25%] left-[20%] w-2 h-2 bg-sky-400 rounded-full shadow-[0_0_20px_5px_rgba(56,189,248,0.4)] animate-pulse [animation-duration:3s]"></div>
+          <div className="absolute top-[65%] right-[15%] w-1.5 h-1.5 bg-indigo-400 rounded-full shadow-[0_0_15px_3px_rgba(99,102,241,0.5)] animate-pulse [animation-duration:4s]"></div>
+          <div className="absolute bottom-[20%] left-[30%] w-1 h-1 bg-cyan-300 rounded-full shadow-[0_0_10px_2px_rgba(34,211,238,0.6)] animate-pulse [animation-duration:2.5s]"></div>
+          <motion.div 
+            className="absolute top-[40%] left-[50%] w-1.5 h-1.5 bg-sky-300 rounded-full shadow-[0_0_15px_3px_rgba(56,189,248,0.6)]"
+            animate={{ x: [0, 150, -100, 0], y: [0, -80, 60, 0], opacity: [0.2, 1, 0.2] }}
+            transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </div>
+
+        {/* 3. Destellos de Luz Profundos (Nebulosas) */}
+        <div className="absolute top-[-10%] left-[5%] w-[800px] h-[800px] bg-sky-600/10 rounded-full blur-[150px]"></div>
+        <div className="absolute bottom-[-10%] right-[5%] w-[700px] h-[700px] bg-indigo-600/10 rounded-full blur-[150px]"></div>
+        <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-sky-400/5 rounded-full blur-[100px]"></div>
+      </div>
       
       {/* --- NOTIFICACIONES TOAST --- */}
       <Toaster 
@@ -319,7 +349,7 @@ const handleDirectDownload = () => {
 
       
      {/* --- NAVBAR --- */}
-      <nav className="fixed top-0 w-full glass-panel z-50 border-b-0 border-white/5 bg-[#0b1325]/80 backdrop-blur-md h-16">
+      <nav className="fixed top-0 w-full glass-panel z-50 border-b border-white/5 bg-[#020408]/80 backdrop-blur-md h-16">
         <div className="max-w-6xl mx-auto px-4 h-full flex items-center justify-between relative">
           
           <div className="flex items-center gap-3">
@@ -497,71 +527,56 @@ const handleDirectDownload = () => {
         </div>
       </nav>
 
-      {/* --- HERO SECTION Y RESTO DEL SITIO --- */}
-      <section className="relative pt-40 pb-20 overflow-hidden flex flex-col items-center text-center px-4">
-        <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-sky-500/[0.08] rounded-full blur-[100px] pointer-events-none" />
+     {/* --- HERO SECTION Y RESTO DEL SITIO --- */}
+      <section className="relative pt-40 pb-28 overflow-hidden flex flex-col items-center text-center px-4 z-10">
         
-        <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="max-w-4xl mx-auto z-10 flex flex-col items-center">
+        <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="max-w-5xl mx-auto flex flex-col items-center relative">
           
-          <motion.div variants={fadeUp} className="mb-8 relative group">
-             <div className="absolute -inset-4 bg-sky-500/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-             <img 
-               src="/logo.png"
-               alt="Logo Grande" 
-               className="w-24 h-24 md:w-32 md:h-32 object-contain drop-shadow-[0_0_30px_rgba(14,165,233,0.3)] relative z-10"
-             />
+          <motion.div variants={fadeUp} className="mb-10 relative group cursor-default">
+             <div className="absolute -inset-6 bg-gradient-to-r from-sky-500/0 via-sky-500/20 to-sky-500/0 rounded-full blur-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-700"></div>
+             <img src="/logo.png" alt="Logo Grande" className="w-28 h-28 md:w-36 md:h-36 object-contain drop-shadow-[0_0_40px_rgba(14,165,233,0.4)] relative z-10 transform group-hover:scale-105 transition-transform duration-500" />
           </motion.div>
 
-          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-sky-500/30 bg-sky-500/10 text-xs font-semibold text-sky-400 mb-6 tracking-widest uppercase">
+          <motion.div variants={fadeUp} className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-sky-400/20 bg-sky-900/20 backdrop-blur-md shadow-[0_0_20px_rgba(56,189,248,0.15)] text-[11px] md:text-xs font-bold text-sky-300 mb-8 tracking-[0.2em] uppercase">
+            <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse shadow-[0_0_8px_rgba(56,189,248,0.8)]"></span>
             Cyber Forensic Suite
           </motion.div>
           
-          <motion.h1 variants={fadeUp} className="text-5xl md:text-7xl font-bold tracking-tighter mb-6">
-            <span className="text-sky-400 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]">e</span>
-            <span className="text-transparent bg-clip-text bg-gradient-to-b from-white to-sky-100/50">
+          <motion.h1 variants={fadeUp} className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-6 leading-tight w-full flex justify-center">
+            <span className="text-sky-400 drop-shadow-[0_0_25px_rgba(56,189,248,0.8)]">e</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-100 to-slate-400 drop-shadow-sm pb-2 px-1">
               VidensTalk
             </span>
           </motion.h1>
           
-          <motion.p variants={fadeUp} className="text-lg md:text-xl text-sky-100/60 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Sistema integral para la gestión, análisis y preservación de evidencia digital. 
-            Procesa chats exportados localmente con total seguridad y privacidad.
+          <motion.p variants={fadeUp} className="text-lg md:text-xl text-slate-300/80 max-w-2xl mx-auto mb-12 leading-relaxed font-light">
+            Sistema integral para la gestión, análisis y preservación de evidencia digital. <strong className="text-white font-medium"> Procesa chats exportados localmente </strong> con total seguridad y privacidad.
           </motion.p>
           
-          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
-            
-            {/* 🔥 NUEVO BOTÓN DE DESCARGA PARA WINDOWS 🔥 */}
+          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-5 w-full">
             <SignedOut>
               <SignInButton mode="modal">
-                <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-sky-500 text-white border border-sky-500 px-6 py-3 rounded-lg font-bold hover:bg-sky-400 transition-all shadow-[0_0_15px_rgba(14,165,233,0.3)]">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M6.555 1.375 0 2.237v5.45h6.555V1.375zM0 13.795l6.555.933V8.313H0v5.482zm7.278-5.4.026 6.378L16 16V8.395H7.278zM16 0 7.33 1.244v6.414H16V0z"/>
-                  </svg>
-                  Descargar para Windows
+                <button className="w-full sm:w-auto flex items-center justify-center gap-3 bg-sky-500/90 hover:bg-sky-400 text-white border border-sky-400/50 px-8 py-4 rounded-xl font-bold transition-all shadow-[0_0_25px_rgba(14,165,233,0.4)] hover:shadow-[0_0_35px_rgba(14,165,233,0.6)]">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M6.555 1.375 0 2.237v5.45h6.555V1.375zM0 13.795l6.555.933V8.313H0v5.482zm7.278-5.4.026 6.378L16 16V8.395H7.278zM16 0 7.33 1.244v6.414H16V0z"/></svg>
+                  <span className="tracking-wide">Descargar para Windows</span>
                 </button>
               </SignInButton>
             </SignedOut>
             <SignedIn>
-              <button onClick={handleDirectDownload} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-sky-500 text-white border border-sky-500 px-6 py-3 rounded-lg font-bold hover:bg-sky-400 transition-all shadow-[0_0_15px_rgba(14,165,233,0.3)]">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M6.555 1.375 0 2.237v5.45h6.555V1.375zM0 13.795l6.555.933V8.313H0v5.482zm7.278-5.4.026 6.378L16 16V8.395H7.278zM16 0 7.33 1.244v6.414H16V0z"/>
-                </svg>
-                Descargar para Windows
+              <button onClick={handleDirectDownload} className="w-full sm:w-auto flex items-center justify-center gap-3 bg-sky-500/90 hover:bg-sky-400 text-white border border-sky-400/50 px-8 py-4 rounded-xl font-bold transition-all shadow-[0_0_25px_rgba(14,165,233,0.4)] hover:shadow-[0_0_35px_rgba(14,165,233,0.6)]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M6.555 1.375 0 2.237v5.45h6.555V1.375zM0 13.795l6.555.933V8.313H0v5.482zm7.278-5.4.026 6.378L16 16V8.395H7.278zM16 0 7.33 1.244v6.414H16V0z"/></svg>
+                <span className="tracking-wide">Descargar para Windows</span>
               </button>
             </SignedIn>
-
-            {/* BOTÓN DE GUÍA PERICIAL ORIGINAL */}
-            <a href="/guia-procedimiento-pericial.pdf" target="_blank"
-               className="w-full sm:w-auto flex items-center justify-center gap-2 bg-sky-500/10 border border-sky-500/20 text-sky-400 px-6 py-3 rounded-lg font-medium hover:bg-sky-500/20 transition-colors">
-              <FileText className="w-4 h-4" />
+            <a href="/guia-procedimiento-pericial.pdf" target="_blank" className="group w-full sm:w-auto flex items-center justify-center gap-3 bg-slate-800/40 hover:bg-slate-700/60 border border-slate-600/50 hover:border-sky-500/30 text-slate-300 hover:text-white px-8 py-4 rounded-xl font-semibold transition-all backdrop-blur-sm">
+              <FileText className="w-5 h-5 text-sky-400 group-hover:text-sky-300 transition-colors" />
               Guía Pericial (PDF)
             </a>
-
           </motion.div>
         </motion.div>
       </section>
 
-      <section id="how-it-works" className="py-24 border-t border-white/5 bg-[#0b1325] relative overflow-hidden">
+      <section id="how-it-works" className="py-24 relative overflow-hidden z-10">
         <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[500px] h-[500px] bg-sky-500/[0.03] rounded-full blur-[120px] pointer-events-none" />
 
         <div className="max-w-6xl mx-auto px-4 relative z-10">
@@ -648,34 +663,49 @@ const handleDirectDownload = () => {
         </div>
       </section>
 
-      <section id="features" className="py-24 border-t border-white/5 bg-[#070b14]">
+      <section id="features" className="py-24 relative z-10">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-white mb-4">Garantías Forenses</h2>
-            <p className="text-sky-100/60">Arquitectura diseñada específicamente para el rigor del ámbito legal y pericial.</p>
+            <h2 className="text-3xl font-bold text-white mb-4">Arquitectura Forense</h2>
+            <p className="text-sky-100/60">Diseñado específicamente para el rigor del ámbito legal, pericial e institucional.</p>
           </div>
           
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={staggerContainer} className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <FeatureCard 
-              icon={<ShieldCheck className="w-6 h-6 text-sky-400" />} 
-              title="Privacidad Absoluta (Offline)" 
-              description="Procesamiento local y aislado. Tus archivos nunca pasan por servidores de terceros, asegurando intacta la cadena de custodia." 
-            />
-            <FeatureCard 
-              icon={<CheckCircle2 className="w-6 h-6 text-sky-400" />} 
-              title="Validez Jurídica (Hashes)" 
-              description="Cálculo automático y estampado de firmas criptográficas (MD5 y SHA-256) para garantizar la inalterabilidad de la evidencia." 
+              icon={<Download className="w-6 h-6 text-sky-400" />} 
+              title="Ingesta Segura" 
+              description="Procesamiento de exportaciones nativas de WhatsApp aislando eventos de sistema y estructurando la cronología sin alterar la prueba original." 
             />
             <FeatureCard 
               icon={<Search className="w-6 h-6 text-sky-400" />} 
-              title="Motor de Indexación Masiva" 
-              description="Audita historiales de chat de varios años y gigabytes de peso sin bloqueos, con búsquedas globales en milisegundos." 
+              title="Inteligencia Global (FTS5)" 
+              description="Búsqueda indexada ultra-rápida. Encuentre una palabra clave entre millones de mensajes, a través de todos los expedientes, en milisegundos." 
+            />
+            <FeatureCard 
+              icon={<CheckCircle2 className="w-6 h-6 text-sky-400" />} 
+              title="Preservación Criptográfica" 
+              description="Generación automática de firmas Hash SHA-256 en el momento de la ingesta para garantizar la inmutabilidad de la evidencia digital." 
+            />
+            <FeatureCard 
+              icon={<FileText className="w-6 h-6 text-sky-400" />} 
+              title="Galería Multimedia Forense" 
+              description="Indexación automática de imágenes, videos, documentos adjuntos y enlaces web cruzados, listos para acceder con un clic." 
+            />
+            <FeatureCard 
+              icon={<Bug className="w-6 h-6 text-sky-400" />} 
+              title="Metadatos y Estadísticas" 
+              description="Análisis inteligente de patrones de comportamiento, mapas de horarios de actividad y ranking de participación por cada actor involucrado." 
+            />
+            <FeatureCard 
+              icon={<ShieldCheck className="w-6 h-6 text-sky-400" />} 
+              title="Aislamiento Local (Privacy-First)" 
+              description="Todo el procesamiento ocurre en su disco local (SSD). Las evidencias nunca se suben a servidores externos, protegiendo la cadena de custodia." 
             />
           </motion.div>
         </div>
       </section>
 
-      <section id="planes" className="py-24 border-t border-white/5 bg-[#070b14] relative">
+      <section id="planes" className="py-24 relative z-10">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-white mb-4">Planes y Licencias</h2>
@@ -714,11 +744,12 @@ const handleDirectDownload = () => {
               </div>
               
               <ul className="space-y-4 mb-8 flex-1 text-sm">
-                <li className="flex items-start gap-3 text-sky-100/80"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> <span className="leading-tight">Procesamiento básico (hasta 15k msjs)</span></li>
-                <li className="flex items-start gap-3 text-sky-100/80"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> <span className="leading-tight">Búsqueda global de palabras clave</span></li>
-                <li className="flex items-start gap-3 text-sky-100/80"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> <span className="leading-tight">Exportación a PDF (Marca de agua)</span></li>
-                <li className="flex items-start gap-3 text-white/30"><CheckCircle2 className="w-5 h-5 text-white/20 shrink-0" /> <span className="leading-tight">Sin cálculo de Hashes forenses</span></li>
-                <li className="flex items-start gap-3 text-white/30"><CheckCircle2 className="w-5 h-5 text-white/20 shrink-0" /> <span className="leading-tight">Requiere conexión a internet</span></li>
+                <li className="flex items-start gap-3 text-sky-100/80"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> <span className="leading-tight">Ingesta de hasta 2.000 mensajes por expediente</span></li>
+                <li className="flex items-start gap-3 text-sky-100/80"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> <span className="leading-tight">Organización en carpetas principales</span></li>
+                <li className="flex items-start gap-3 text-sky-100/80"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> <span className="leading-tight">Motor de Inteligencia Global (FTS5)</span></li>
+                <li className="flex items-start gap-3 text-sky-100/80"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> <span className="leading-tight">Marcador de Evidencia (Favoritos)</span></li>
+                <li className="flex items-start gap-3 text-sky-100/80"><CheckCircle2 className="w-5 h-5 text-sky-500 shrink-0" /> <span className="leading-tight">Reportes PDF Estándar (Sin filtros)</span></li>
+                <li className="flex items-start gap-3 text-white/30"><CheckCircle2 className="w-5 h-5 text-white/20 shrink-0" /> <span className="leading-tight">Sin validación Hash SHA-256 visible</span></li>
               </ul>
               
               <div className="mt-auto pt-4">
@@ -787,11 +818,12 @@ const handleDirectDownload = () => {
               </div>
               
               <ul className="space-y-4 mb-8 flex-1 text-sm">
-                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> <span className="leading-tight">Procesamiento masivo ilimitado</span></li>
-                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> <span className="leading-tight">Hashes MD5 y SHA-256 automáticos</span></li>
-                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> <span className="leading-tight">Reporte PDF Forense profesional</span></li>
-                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> <span className="leading-tight">Privacidad Absoluta (Modo Offline)</span></li>
-                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> <span className="leading-tight">Soporte técnico por correo</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> <span className="leading-tight"><strong>Volumen Ilimitado</strong> de ingesta de mensajes</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> <span className="leading-tight"><strong>Sello Criptográfico (SHA-256)</strong> impreso en PDF</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> <span className="leading-tight"><strong>Filtros Forenses:</strong> Aísle fechas o palabras clave</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> <span className="leading-tight"><strong>Motor de IA:</strong> Transcripción de notas de voz</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> <span className="leading-tight">Jerarquía avanzada con subcarpetas infinitas</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0" /> <span className="leading-tight">Soporte técnico prioritario y actualizaciones</span></li>
               </ul>
               
               <div className="mt-auto pt-4">
@@ -861,11 +893,12 @@ const handleDirectDownload = () => {
               </div>
               
               <ul className="space-y-4 mb-8 flex-1 text-sm">
-                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight">Todo lo de la Licencia Pericial</span></li>
-                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight"><span className="font-semibold">Marca Blanca:</span> Logo de tu institución en PDFs</span></li>
-                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight">Multi-licencia (Hasta 5 equipos)</span></li>
-                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight">Implementación y capacitación</span></li>
-                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight">Canal de soporte VIP directo</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight">Todo lo incluido en la <strong>Licencia Pericial</strong></span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight"><strong>Marca Blanca:</strong> Personalización de PDFs con emblema</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight"><strong>Gestión de Equipo:</strong> 1 Matriz + 4 Analistas Operativos</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight"><strong>Auditoría Estricta:</strong> Registro inmutable de hardware (HWID)</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight"><strong>Seguridad:</strong> Credenciales corporativas encriptadas</span></li>
+                <li className="flex items-start gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" /> <span className="leading-tight"><strong>Panel de Nodos:</strong> Revocación de accesos en tiempo real</span></li>
               </ul>
               
               {!userId ? (
@@ -891,7 +924,7 @@ const handleDirectDownload = () => {
         </div>
       </section>
 
-      <section id="faq" className="py-24 border-t border-white/5 bg-[#0b1325]">
+      <section id="faq" className="py-24 relative z-10">
         <div className="max-w-4xl mx-auto px-4">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-sky-500/30 bg-sky-500/10 text-xs font-bold text-sky-400 mb-6 uppercase tracking-widest">
@@ -926,7 +959,7 @@ const handleDirectDownload = () => {
         </div>
       </section>
 
-      <section id="soporte" className="py-24 border-t border-white/5 bg-[#070b14] relative overflow-hidden">
+      <section id="soporte" className="py-24 relative overflow-hidden z-10">
         <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-sky-500/30 bg-sky-500/10 text-xs font-bold text-sky-400 mb-6 uppercase tracking-widest">
             Centro de Ayuda
