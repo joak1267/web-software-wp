@@ -49,7 +49,8 @@ export async function POST(req: Request) {
 
   // 4. Lógica para cuando se crea un usuario (Registro)
   if (eventType === 'user.created') {
-    const { id, email_addresses, first_name } = evt.data;
+    // 🔥 1. Agregamos last_name a la extracción de datos de Clerk
+    const { id, email_addresses, first_name, last_name } = evt.data;
     
     // Obtenemos el email principal
     const email = email_addresses && email_addresses.length > 0 
@@ -57,6 +58,9 @@ export async function POST(req: Request) {
       : null;
       
     const nombreUsuario = first_name || 'Investigador';
+
+    // 🔥 2. Construimos el nombre completo (quitando espacios extra si no hay apellido)
+    const fullName = `${first_name || ''} ${last_name || ''}`.trim();
     
     if (!email) {
        console.error("El usuario creado no tiene email asociado.");
@@ -78,26 +82,13 @@ export async function POST(req: Request) {
       .insert([{ 
         id: id, 
         email: email, 
+        full_name: fullName, // 🔥 3. ACÁ GUARDAMOS EL NOMBRE EN LA NUEVA COLUMNA DE SUPABASE
         plan: 'comunidad', 
         password: nuevaLicencia 
       }]);
 
     if (errorUsers) {
        console.error('Error insertando en tabla users:', errorUsers);
-       return new Response('Error Base de Datos', { status: 500 });
-    }
-
-    // Luego en perfiles (esto reemplaza al viejo código de tu frontend)
-    const { error: errorPerfiles } = await supabase
-      .from('perfiles')
-      .insert([{ 
-        id: id, 
-        email: email, 
-        plan_actual: 'comunidad' 
-      }]);
-
-    if (errorPerfiles) {
-       console.error('Error insertando en tabla perfiles:', errorPerfiles);
        return new Response('Error Base de Datos', { status: 500 });
     }
 
